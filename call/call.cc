@@ -913,7 +913,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   // the call has already started.
   // Copy ssrcs from `config` since `config` is moved.
   std::vector<uint32_t> ssrcs = config.rtp.ssrcs;
-
+//  发送视频流
   VideoSendStream* send_stream = new VideoSendStream(
       clock_, num_cpu_cores_, task_queue_factory_, network_thread_,
       call_stats_->AsRtcpRttStats(), transport_send_.get(),
