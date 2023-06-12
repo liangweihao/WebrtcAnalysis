@@ -488,7 +488,7 @@ void SimplePeerConnection::AddStreams(bool audio_only) {
       MediaStreamPair;
   active_streams_.insert(MediaStreamPair(stream->id(), stream));
 }
-
+// 
 bool SimplePeerConnection::CreateDataChannel() {
   struct webrtc::DataChannelInit init;
   init.ordered = true;

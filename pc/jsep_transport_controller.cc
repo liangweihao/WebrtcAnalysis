@@ -73,7 +73,7 @@ JsepTransportController::~JsepTransportController() {
   RTC_DCHECK_RUN_ON(network_thread_);
   DestroyAllJsepTransports_n();
 }
-
+// 设置本地的描述
 RTCError JsepTransportController::SetLocalDescription(
     SdpType type,
     const cricket::SessionDescription* description) {
@@ -551,7 +551,8 @@ JsepTransportController::GetActiveDtlsTransports() {
   }
   return dtls_transports;
 }
-
+// 当应用本地描述的时候 就会创建数据通道的建立
+// 创建jsep
 RTCError JsepTransportController::ApplyDescription_n(
     bool local,
     SdpType type,
@@ -584,6 +585,7 @@ RTCError JsepTransportController::ApplyDescription_n(
         !bundles_.IsFirstMidInGroup(content_info.name)) {
       continue;
     }
+    // 创建jesp
     error = MaybeCreateJsepTransport(local, content_info, *description);
     if (!error.ok()) {
       return error;
@@ -1023,6 +1025,8 @@ cricket::JsepTransport* JsepTransportController::GetJsepTransportByName(
     const std::string& transport_name) {
   return transports_.GetTransportByName(transport_name);
 }
+// 创建jsep
+// 创建sctp传输
 
 RTCError JsepTransportController::MaybeCreateJsepTransport(
     bool local,
@@ -1076,6 +1080,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
 
   std::unique_ptr<cricket::SctpTransportInternal> sctp_transport;
   if (config_.sctp_factory) {
+    // 创建sctp
     sctp_transport =
         config_.sctp_factory->CreateSctpTransport(rtp_dtls_transport.get());
   }

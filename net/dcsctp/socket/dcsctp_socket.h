@@ -269,7 +269,7 @@ class DcSctpSocket : public DcSctpSocketInterface {
   RTC_NO_UNIQUE_ADDRESS webrtc::SequenceChecker thread_checker_;
   Metrics metrics_;
   DcSctpOptions options_;
-
+//  stcp 数据回调
   // Enqueues callbacks and dispatches them just before returning to the caller.
   CallbackDeferrer callbacks_;
 

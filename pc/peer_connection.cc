@@ -686,7 +686,7 @@ RTCError PeerConnection::Initialize(
 
   return RTCError::OK();
 }
-
+// 初始化控制器
 JsepTransportController* PeerConnection::InitializeTransportController_n(
     const RTCConfiguration& configuration,
     const PeerConnectionDependencies& dependencies) {
@@ -725,7 +725,7 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
       };
 
   config.field_trials = trials_.get();
-
+// 创建jsep传输控制器
   transport_controller_.reset(new JsepTransportController(
       network_thread(), port_allocator_.get(),
       async_dns_resolver_factory_.get(), std::move(config)));
@@ -1388,7 +1388,7 @@ absl::optional<bool> PeerConnection::can_trickle_ice_candidates() {
   return description->description()->transport_infos()[0].description.HasOption(
       "trickle");
 }
-
+// 由java调过来的
 RTCErrorOr<rtc::scoped_refptr<DataChannelInterface>>
 PeerConnection::CreateDataChannelOrError(const std::string& label,
                                          const DataChannelInit* config) {
@@ -1408,21 +1408,26 @@ PeerConnection::CreateDataChannelOrError(const std::string& label,
   }
 
   internal_config.fallback_ssl_role = sdp_handler_->GuessSslRole();
+  // 创建DataChannel
   RTCErrorOr<rtc::scoped_refptr<DataChannelInterface>> ret =
+  // 创建数据通道
       data_channel_controller_.InternalCreateDataChannelWithProxy(
           label, internal_config);
   if (!ret.ok()) {
     return ret.MoveError();
   }
 
+  // 得到创建的通道
   rtc::scoped_refptr<DataChannelInterface> channel = ret.MoveValue();
 
+//  更新sdp
   // Check the onRenegotiationNeeded event (with plan-b backward compat)
   if (configuration_.sdp_semantics == SdpSemantics::kUnifiedPlan ||
       (configuration_.sdp_semantics == SdpSemantics::kPlanB_DEPRECATED &&
        first_datachannel)) {
     sdp_handler_->UpdateNegotiationNeeded();
   }
+  // 通知数据添加
   NoteUsageEvent(UsageEvent::DATA_ADDED);
   return channel;
 }

@@ -276,7 +276,7 @@ class SctpDataChannel : public DataChannelInterface {
   const absl::optional<Priority> priority_;
   const bool negotiated_;
   const bool ordered_;
-
+  // 注册数据回调
   DataChannelObserver* observer_ RTC_GUARDED_BY(network_thread_) = nullptr;
   std::unique_ptr<ObserverAdapter> observer_adapter_;
   DataState state_ RTC_GUARDED_BY(network_thread_) = kConnecting;

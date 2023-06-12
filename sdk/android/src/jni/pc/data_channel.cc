@@ -53,7 +53,7 @@ void DataChannelObserverJni::OnStateChange() {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   Java_Observer_onStateChange(env, j_observer_global_);
 }
-
+//收到消息 并且回到给java
 void DataChannelObserverJni::OnMessage(const DataBuffer& buffer) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   ScopedJavaLocalRef<jobject> byte_buffer = NewDirectByteBuffer(
@@ -91,7 +91,7 @@ ScopedJavaLocalRef<jobject> WrapNativeDataChannel(
   // Channel is now owned by Java object, and will be freed from there.
   return Java_DataChannel_Constructor(env, jlongFromPointer(channel.release()));
 }
-
+// 注册数据回调
 static jlong JNI_DataChannel_RegisterObserver(
     JNIEnv* jni,
     const JavaParamRef<jobject>& j_dc,

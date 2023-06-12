@@ -23,7 +23,7 @@ SctpTransportFactory::SctpTransportFactory(rtc::Thread* network_thread)
     : network_thread_(network_thread) {
   RTC_UNUSED(network_thread_);
 }
-
+// 创建SCTP传输
 std::unique_ptr<SctpTransportInternal>
 SctpTransportFactory::CreateSctpTransport(
     rtc::PacketTransportInternal* transport) {

@@ -294,7 +294,7 @@ rtc::scoped_refptr<SctpDataChannel> SctpDataChannel::Create(
       signaling_thread, network_thread);
 }
 
-// static
+// 创建SCTP数据通道
 rtc::scoped_refptr<DataChannelInterface> SctpDataChannel::CreateProxy(
     rtc::scoped_refptr<SctpDataChannel> channel,
     rtc::scoped_refptr<PendingTaskSafetyFlag> signaling_safety) {
@@ -353,7 +353,7 @@ SctpDataChannel::~SctpDataChannel() {
   if (observer_adapter_)
     ObserverAdapter::DeleteOnSignalingThread(std::move(observer_adapter_));
 }
-
+// 注册回调
 void SctpDataChannel::RegisterObserver(DataChannelObserver* observer) {
   // Note: at this point, we do not know on which thread we're being called
   // from since this method bypasses the proxy. On Android in particular,
@@ -668,7 +668,7 @@ DataChannelStats SctpDataChannel::GetStats() const {
                          messages_received(), bytes_sent(), bytes_received()};
   return stats;
 }
-
+// stcp 收到data
 void SctpDataChannel::OnDataReceived(DataMessageType type,
                                      const rtc::CopyOnWriteBuffer& payload) {
   RTC_DCHECK_RUN_ON(network_thread_);
@@ -845,7 +845,7 @@ void SctpDataChannel::SetState(DataState state) {
   if (controller_)
     controller_->OnChannelStateChanged(this, state_);
 }
-
+// 从队列中获取剩余的buffer
 // RTC_RUN_ON(network_thread_).
 void SctpDataChannel::DeliverQueuedReceivedData() {
   if (!observer_ || state_ != kOpen) {

@@ -32,7 +32,7 @@ struct DataChunkConfig : ChunkConfig {
   static constexpr size_t kHeaderSize = 16;
   static constexpr size_t kVariableLengthAlignment = 1;
 };
-
+// DataChunk的大小一般是根据网络带宽和数据传输稳定性等因素来确定的，过大可能会导致网络拥塞，过小则会增加传输的开销。
 class DataChunk : public AnyDataChunk, public TLVTrait<DataChunkConfig> {
  public:
   static constexpr int kType = DataChunkConfig::kType;

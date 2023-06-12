@@ -105,7 +105,7 @@ PortAllocator::PortAllocator()
   // The allocator will be attached to a thread in Initialize.
   thread_checker_.Detach();
 }
-
+// 初始化端口
 void PortAllocator::Initialize() {
   RTC_DCHECK(thread_checker_.IsCurrent());
   initialized_ = true;

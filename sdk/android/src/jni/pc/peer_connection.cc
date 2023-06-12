@@ -550,7 +550,7 @@ static ScopedJavaLocalRef<jobject> JNI_PeerConnection_GetCertificate(
       rtc_config.certificates[0];
   return NativeToJavaRTCCertificatePEM(jni, certificate->ToPEM());
 }
-// 
+// 创建datachannel
 static ScopedJavaLocalRef<jobject> JNI_PeerConnection_CreateDataChannel(
     JNIEnv* jni,
     const JavaParamRef<jobject>& j_pc,

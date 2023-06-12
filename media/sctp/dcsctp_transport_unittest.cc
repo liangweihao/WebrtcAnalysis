@@ -58,7 +58,7 @@ class Peer {
     EXPECT_CALL(*mock_dcsctp_socket_factory, Create)
         .Times(1)
         .WillOnce(Return(ByMove(std::move(socket_ptr))));
-
+    // 创建sctp
     sctp_transport_ = std::make_unique<webrtc::DcSctpTransport>(
         rtc::Thread::Current(), &fake_packet_transport_, &simulated_clock_,
         std::move(mock_dcsctp_socket_factory));

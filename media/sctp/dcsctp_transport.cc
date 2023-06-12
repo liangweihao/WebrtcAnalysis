@@ -120,7 +120,7 @@ DcSctpTransport::DcSctpTransport(rtc::Thread* network_thread,
                       transport,
                       clock,
                       std::make_unique<dcsctp::DcSctpSocketFactory>()) {}
-
+// 创建sctp传输
 DcSctpTransport::DcSctpTransport(
     rtc::Thread* network_thread,
     rtc::PacketTransportInternal* transport,
@@ -142,6 +142,7 @@ DcSctpTransport::DcSctpTransport(
   rtc::StringBuilder sb;
   sb << debug_name_ << instance_count++;
   debug_name_ = sb.Release();
+  // 连接到数据通道
   ConnectTransportSignals();
 }
 
@@ -438,7 +439,7 @@ void DcSctpTransport::OnTotalBufferedAmountLow() {
     }
   }
 }
-
+// DCStcp 消息   DcSctpTransport 目前仅在 Chrome 浏览器中得到支持，而且只能在安全上下文中使用（即 HTTPS 网站
 void DcSctpTransport::OnMessageReceived(dcsctp::DcSctpMessage message) {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DLOG(LS_VERBOSE) << debug_name_ << "->OnMessageReceived(sid="
@@ -459,6 +460,7 @@ void DcSctpTransport::OnMessageReceived(dcsctp::DcSctpMessage message) {
                                message.payload().size());
 
   if (data_channel_sink_) {
+    // 数据通道接收器 收到消息 
     data_channel_sink_->OnDataReceived(message.stream_id().value(), *type,
                                        receive_buffer_);
   }
@@ -597,7 +599,7 @@ void DcSctpTransport::OnIncomingStreamsReset(
     }
   }
 }
-
+// 连接到传输信号通道
 void DcSctpTransport::ConnectTransportSignals() {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (!transport_) {
@@ -605,6 +607,7 @@ void DcSctpTransport::ConnectTransportSignals() {
   }
   transport_->SignalWritableState.connect(
       this, &DcSctpTransport::OnTransportWritableState);
+      // 注册接收到的消息包
   transport_->SignalReadPacket.connect(this,
                                        &DcSctpTransport::OnTransportReadPacket);
   transport_->SignalClosed.connect(this, &DcSctpTransport::OnTransportClosed);
@@ -629,7 +632,7 @@ void DcSctpTransport::OnTransportWritableState(
                        << transport->writable();
   MaybeConnectSocket();
 }
-
+// sctp读取包
 void DcSctpTransport::OnTransportReadPacket(
     rtc::PacketTransportInternal* transport,
     const char* data,
@@ -645,6 +648,7 @@ void DcSctpTransport::OnTransportReadPacket(
   RTC_DLOG(LS_VERBOSE) << debug_name_
                        << "->OnTransportReadPacket(), length=" << length;
   if (socket_) {
+    // 转发处理 消息包
     socket_->ReceivePacket(rtc::ArrayView<const uint8_t>(
         reinterpret_cast<const uint8_t*>(data), length));
   }

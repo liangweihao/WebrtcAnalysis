@@ -288,7 +288,7 @@ DataChannelController::CreateDataChannel(const std::string& label,
 
   // In case `sid` has changed. Update `config` accordingly.
   config.id = sid.stream_id_int();
-
+  //创建stcp
   rtc::scoped_refptr<SctpDataChannel> channel = SctpDataChannel::Create(
       weak_factory_.GetWeakPtr(), label, data_channel_transport_ != nullptr,
       config, signaling_thread(), network_thread());
@@ -301,7 +301,7 @@ DataChannelController::CreateDataChannel(const std::string& label,
 
   return channel;
 }
-
+// java -》 创建数据通道
 RTCErrorOr<rtc::scoped_refptr<DataChannelInterface>>
 DataChannelController::InternalCreateDataChannelWithProxy(
     const std::string& label,
@@ -316,10 +316,13 @@ DataChannelController::InternalCreateDataChannelWithProxy(
   bool ready_to_send = false;
   InternalDataChannelInit new_config = config;
   StreamId sid(new_config.id);
+  // 启动网络
   auto ret = network_thread()->BlockingCall(
       [&]() -> RTCErrorOr<rtc::scoped_refptr<SctpDataChannel>> {
         RTC_DCHECK_RUN_ON(network_thread());
+        // 创建数据通道
         auto channel = CreateDataChannel(label, new_config);
+        // 创建失败了
         if (!channel.ok())
           return channel;
         ready_to_send =
@@ -332,6 +335,7 @@ DataChannelController::InternalCreateDataChannelWithProxy(
           // `InternalCreateDataChannelWithProxy` returns.
           network_thread()->PostTask([channel = channel.value()] {
             if (channel->state() != DataChannelInterface::DataState::kClosed)
+            // 传输完成
               channel->OnTransportReady();
           });
         }

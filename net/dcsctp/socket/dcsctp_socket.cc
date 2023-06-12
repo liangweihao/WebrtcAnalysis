@@ -752,6 +752,7 @@ void DcSctpSocket::ReceivePacket(rtc::ArrayView<const uint8_t> data) {
   ++metrics_.rx_packets_count;
 
   if (packet_observer_ != nullptr) {
+    // 收到pgk包
     packet_observer_->OnReceivedPacket(callbacks_.TimeMillis(), data);
   }
 
@@ -783,6 +784,7 @@ void DcSctpSocket::ReceivePacket(rtc::ArrayView<const uint8_t> data) {
   MaybeSendShutdownOnPacketReceived(*packet);
 
   for (const auto& descriptor : packet->descriptors()) {
+    // 分发消息
     if (!Dispatch(packet->common_header(), descriptor)) {
       break;
     }
@@ -805,7 +807,7 @@ void DcSctpSocket::DebugPrintOutgoing(rtc::ArrayView<const uint8_t> payload) {
                          << DebugConvertChunkToString(desc.data);
   }
 }
-
+// 统一处理分发的消息
 bool DcSctpSocket::Dispatch(const CommonHeader& header,
                             const SctpPacket::ChunkDescriptor& descriptor) {
   switch (descriptor.type) {
@@ -1014,7 +1016,7 @@ void DcSctpSocket::ReportFailedToParseChunk(int chunk_type) {
   sb << "Failed to parse chunk of type: " << chunk_type;
   callbacks_.OnError(ErrorKind::kParseFailed, sb.str());
 }
-
+// 处理不同的消息提
 void DcSctpSocket::HandleData(const CommonHeader& header,
                               const SctpPacket::ChunkDescriptor& descriptor) {
   absl::optional<DataChunk> chunk = DataChunk::Parse(descriptor.data);
@@ -1022,7 +1024,7 @@ void DcSctpSocket::HandleData(const CommonHeader& header,
     HandleDataCommon(*chunk);
   }
 }
-
+// 出俩
 void DcSctpSocket::HandleIData(const CommonHeader& header,
                                const SctpPacket::ChunkDescriptor& descriptor) {
   absl::optional<IDataChunk> chunk = IDataChunk::Parse(descriptor.data);
@@ -1030,7 +1032,7 @@ void DcSctpSocket::HandleIData(const CommonHeader& header,
     HandleDataCommon(*chunk);
   }
 }
-
+// 处理socket
 void DcSctpSocket::HandleDataCommon(AnyDataChunk& chunk) {
   TSN tsn = chunk.tsn();
   AnyDataChunk::ImmediateAckFlag immediate_ack = chunk.options().immediate_ack;
@@ -1441,6 +1443,7 @@ void DcSctpSocket::DeliverReassembledMessages() {
   if (tcb_->reassembly_queue().HasMessages()) {
     for (auto& message : tcb_->reassembly_queue().FlushMessages()) {
       ++metrics_.rx_messages_count;
+      // 收到消息 然后转发给 DcSctpTransport::OnMessageReceived
       callbacks_.OnMessageReceived(std::move(message));
     }
   }
@@ -1674,7 +1677,7 @@ void DcSctpSocket::HandleIForwardTsn(
     HandleForwardTsnCommon(*chunk);
   }
 }
-
+// 处理tsn
 void DcSctpSocket::HandleForwardTsnCommon(const AnyForwardTsnChunk& chunk) {
   if (!tcb_->capabilities().partial_reliability) {
     SctpPacket::Builder b = tcb_->PacketBuilder();
