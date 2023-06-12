@@ -105,7 +105,7 @@ RtpSenderObservers CreateObservers(RtcpRttStats* call_stats,
   observers.send_packet_observer = send_delay_stats;
   return observers;
 }
-
+// 创建视频流编码器
 std::unique_ptr<VideoStreamEncoder> CreateVideoStreamEncoder(
     Clock* clock,
     int num_cpu_cores,
