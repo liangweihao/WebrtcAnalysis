@@ -73,7 +73,7 @@ struct RtpConfig {
   RtpConfig(const RtpConfig&);
   ~RtpConfig();
   std::string ToString() const;
-
+// SSRC是用于标识RTP数据流的唯一标识符，它可以用于识别RTP流的来源、区分不同的媒体类型以及进行丢包恢复等操作
   std::vector<uint32_t> ssrcs;
 
   // The Rtp Stream Ids (aka RIDs) to send in the RID RTP header extension
