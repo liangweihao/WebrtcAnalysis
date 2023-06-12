@@ -123,6 +123,7 @@ std::unique_ptr<VideoStreamEncoder> CreateVideoStreamEncoder(
   return std::make_unique<VideoStreamEncoder>(
       clock, num_cpu_cores, stats_proxy, encoder_settings,
       std::make_unique<OveruseFrameDetector>(stats_proxy),
+      // 创建默认的sink
       FrameCadenceAdapterInterface::Create(clock, encoder_queue_ptr,
                                            field_trials),
       std::move(encoder_queue), bitrate_allocation_callback_type, field_trials,
