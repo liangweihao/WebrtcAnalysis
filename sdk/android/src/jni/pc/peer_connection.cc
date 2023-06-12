@@ -550,7 +550,7 @@ static ScopedJavaLocalRef<jobject> JNI_PeerConnection_GetCertificate(
       rtc_config.certificates[0];
   return NativeToJavaRTCCertificatePEM(jni, certificate->ToPEM());
 }
-
+// 
 static ScopedJavaLocalRef<jobject> JNI_PeerConnection_CreateDataChannel(
     JNIEnv* jni,
     const JavaParamRef<jobject>& j_pc,
@@ -725,6 +725,7 @@ static ScopedJavaLocalRef<jobject> JNI_PeerConnection_CreateSender(
     const JavaParamRef<jstring>& j_stream_id) {
   std::string kind = JavaToNativeString(jni, j_kind);
   std::string stream_id = JavaToNativeString(jni, j_stream_id);
+//   java层创建sender
   rtc::scoped_refptr<RtpSenderInterface> sender =
       ExtractNativePC(jni, j_pc)->CreateSender(kind, stream_id);
   return NativeToJavaRtpSender(jni, sender);

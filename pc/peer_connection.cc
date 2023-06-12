@@ -416,7 +416,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator!=(
     const PeerConnectionInterface::RTCConfiguration& o) const {
   return !(*this == o);
 }
-
+// 创建pc
 RTCErrorOr<rtc::scoped_refptr<PeerConnection>> PeerConnection::Create(
     rtc::scoped_refptr<ConnectionContext> context,
     const PeerConnectionFactoryInterface::Options& options,
@@ -486,6 +486,7 @@ RTCErrorOr<rtc::scoped_refptr<PeerConnection>> PeerConnection::Create(
   auto pc = rtc::make_ref_counted<PeerConnection>(
       context, options, is_unified_plan, std::move(event_log), std::move(call),
       dependencies, dtls_enabled);
+    // 初始化pc
   RTCError init_error = pc->Initialize(configuration, std::move(dependencies));
   if (!init_error.ok()) {
     RTC_LOG(LS_ERROR) << "PeerConnection initialization failed";
@@ -593,7 +594,7 @@ PeerConnection::~PeerConnection() {
 
   data_channel_controller_.PrepareForShutdown();
 }
-
+// 初始化
 RTCError PeerConnection::Initialize(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     PeerConnectionDependencies dependencies) {
@@ -653,6 +654,7 @@ RTCError PeerConnection::Initialize(
   sdp_handler_ = SdpOfferAnswerHandler::Create(this, configuration,
                                                dependencies, context_.get());
 
+//rtp接收器管理器
   rtp_manager_ = std::make_unique<RtpTransmissionManager>(
       IsUnifiedPlan(), context_.get(), &usage_pattern_, observer_,
       legacy_stats_.get(), [this]() {
@@ -1018,7 +1020,7 @@ PeerConnection::AddTransceiver(cricket::MediaType media_type,
   }
   return AddTransceiver(media_type, nullptr, init);
 }
-
+// 添加收发器
 RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
 PeerConnection::AddTransceiver(
     cricket::MediaType media_type,
@@ -1145,7 +1147,7 @@ void PeerConnection::OnNegotiationNeeded() {
   RTC_DCHECK(!IsClosed());
   sdp_handler_->UpdateNegotiationNeeded();
 }
-
+// 创建发送器 由java层直接调用
 rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
     const std::string& kind,
     const std::string& stream_id) {
