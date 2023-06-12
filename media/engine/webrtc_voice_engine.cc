@@ -1944,6 +1944,7 @@ bool WebRtcVoiceSendChannel::AddSendStream(const StreamParams& sp) {
 
   absl::optional<std::string> audio_network_adaptor_config =
       GetAudioNetworkAdaptorConfig(options_);
+      // 创建音频发送流
   WebRtcAudioSendStream* stream = new WebRtcAudioSendStream(
       ssrc, mid_, sp.cname, sp.id, send_codec_spec_, ExtmapAllowMixed(),
       send_rtp_extensions_, max_send_bitrate_bps_,

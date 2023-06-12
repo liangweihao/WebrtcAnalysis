@@ -1812,6 +1812,7 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
           // stream". Need to call this so the sender won't attempt to configure
           // a no longer existing stream and run into DCHECKs in the lower
           // layers.
+          // 设置ssrc 也会配置流
           transceiver->sender_internal()->SetSsrc(0);
         } else {
           // Get the StreamParams from the channel which could generate SSRCs.

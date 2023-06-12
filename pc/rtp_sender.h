@@ -395,7 +395,7 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
   // cricket::AudioSource.
   std::unique_ptr<LocalAudioSinkAdapter> sink_adapter_;
 };
-
+// 视频发送器
 class VideoRtpSender : public RtpSenderBase {
  public:
   // Construct an RtpSender for video with the given sender ID.

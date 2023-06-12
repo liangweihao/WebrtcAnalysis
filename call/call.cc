@@ -891,7 +891,7 @@ void Call::DestroyAudioReceiveStream(
   // state in two phases.
   delete audio_receive_stream;
 }
-
+// 创建视频发送流
 // This method can be used for Call tests with external fec controller factory.
 webrtc::VideoSendStream* Call::CreateVideoSendStream(
     webrtc::VideoSendStream::Config config,

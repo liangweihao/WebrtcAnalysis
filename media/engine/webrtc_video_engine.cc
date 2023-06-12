@@ -1628,7 +1628,7 @@ bool WebRtcVideoSendChannel::AddSendStream(const StreamParams& sp) {
   config.rtcp_report_interval_ms = video_config_.rtcp_report_interval_ms;
   config.rtp.enable_send_packet_batching =
       video_config_.enable_send_packet_batching;
-
+// 创建视频发送流
   WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
       call_, sp, std::move(config), default_send_options_,
       video_config_.enable_cpu_adaptation, bitrate_config_.max_bitrate_bps,
@@ -2476,13 +2476,13 @@ const std::vector<uint32_t>&
 WebRtcVideoSendChannel::WebRtcVideoSendStream::GetSsrcs() const {
   return ssrcs_;
 }
-
+// 设置编码
 void WebRtcVideoSendChannel::WebRtcVideoSendStream::SetCodec(
     const VideoCodecSettings& codec_settings) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   FallbackToDefaultScalabilityModeIfNotSupported(
       codec_settings.codec, parameters_.config, rtp_parameters_.encodings);
-
+// 获取编码器的配置
   parameters_.encoder_config = CreateVideoEncoderConfig(codec_settings.codec);
   RTC_DCHECK_GT(parameters_.encoder_config.number_of_streams, 0);
 
@@ -2520,7 +2520,7 @@ void WebRtcVideoSendChannel::WebRtcVideoSendStream::SetCodec(
   RTC_LOG(LS_INFO) << "RecreateWebRtcStream (send) because of SetCodec.";
   RecreateWebRtcStream();
 }
-
+//发送参数配置
 void WebRtcVideoSendChannel::WebRtcVideoSendStream::SetSendParameters(
     const ChangedSendParameters& params) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
@@ -2653,7 +2653,7 @@ WebRtcVideoSendChannel::WebRtcVideoSendStream::GetRtpParameters() const {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   return rtp_parameters_;
 }
-
+// 视频加密技术
 void WebRtcVideoSendChannel::WebRtcVideoSendStream::SetFrameEncryptor(
     rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
@@ -2665,10 +2665,11 @@ void WebRtcVideoSendChannel::WebRtcVideoSendStream::SetFrameEncryptor(
     RecreateWebRtcStream();
   }
 }
-
+// 设置编码器适配
 void WebRtcVideoSendChannel::WebRtcVideoSendStream::SetEncoderSelector(
     webrtc::VideoEncoderFactory::EncoderSelectorInterface* encoder_selector) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
+  // 可以根据需要选择最佳的编码器来达到最优的编码效果和延迟
   parameters_.config.encoder_selector = encoder_selector;
   if (stream_) {
     RTC_LOG(LS_INFO)
@@ -2850,7 +2851,7 @@ WebRtcVideoSendChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
 
   return encoder_config;
 }
-
+//  重新配置编码器
 void WebRtcVideoSendChannel::WebRtcVideoSendStream::ReconfigureEncoder(
     webrtc::SetParametersCallback callback) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
@@ -3100,7 +3101,7 @@ void WebRtcVideoSendChannel::WebRtcVideoSendStream::FillBitrateInfo(
   bwe_info->target_enc_bitrate += stats.target_media_bitrate_bps;
   bwe_info->actual_enc_bitrate += stats.media_bitrate_bps;
 }
-
+// 设置帧转换
 void WebRtcVideoSendChannel::WebRtcVideoSendStream::
     SetEncoderToPacketizerFrameTransformer(
         rtc::scoped_refptr<webrtc::FrameTransformerInterface>
@@ -3110,7 +3111,7 @@ void WebRtcVideoSendChannel::WebRtcVideoSendStream::
   if (stream_)
     RecreateWebRtcStream();
 }
-
+// 重新创建发送流
 void WebRtcVideoSendChannel::WebRtcVideoSendStream::RecreateWebRtcStream() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   if (stream_ != NULL) {
@@ -3122,15 +3123,17 @@ void WebRtcVideoSendChannel::WebRtcVideoSendStream::RecreateWebRtcStream() {
                  webrtc::VideoEncoderConfig::ContentType::kScreen),
                 parameters_.options.is_screencast.value_or(false))
       << "encoder content type inconsistent with screencast option";
+      // 编码器设置
   parameters_.encoder_config.encoder_specific_settings =
       ConfigureVideoEncoderSettings(parameters_.codec_settings->codec);
-
+// 发送视频流的配置
   webrtc::VideoSendStream::Config config = parameters_.config.Copy();
   if (!config.rtp.rtx.ssrcs.empty() && config.rtp.rtx.payload_type == -1) {
     RTC_LOG(LS_WARNING) << "RTX SSRCs configured but there's no configured RTX "
                            "payload type the set codec. Ignoring RTX.";
     config.rtp.rtx.ssrcs.clear();
   }
+  // 1层you'hua
   if (parameters_.encoder_config.number_of_streams == 1) {
     // SVC is used instead of simulcast. Remove unnecessary SSRCs.
     if (config.rtp.ssrcs.size() > 1) {
@@ -3140,6 +3143,7 @@ void WebRtcVideoSendChannel::WebRtcVideoSendStream::RecreateWebRtcStream() {
       }
     }
   }
+  // 创建视频发送流 配置和编码器配置
   stream_ = call_->CreateVideoSendStream(std::move(config),
                                          parameters_.encoder_config.Copy());
 
@@ -3152,6 +3156,7 @@ void WebRtcVideoSendChannel::WebRtcVideoSendStream::RecreateWebRtcStream() {
   // Attach the source after starting the send stream to prevent frames from
   // being injected into a not-yet initializated video stream encoder.
   if (source_) {
+    // 设置视频源给编码器 然后就可以得到编码器以后的流
     stream_->SetSource(source_, GetDegradationPreference());
   }
 }

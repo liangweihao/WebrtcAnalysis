@@ -168,6 +168,9 @@ class VideoSendStream {
     VideoStreamEncoderSettings encoder_settings;
 
     // Time interval between RTCP report for video
+    // 在实时传输过程中，RTCP报告通常包括网络延迟、丢包率、抖动等信息，用于评估传输质量并做出相应的控制
+    // 较短的rtcp_report_interval_ms可以提供更快的反馈和更多的控制，但会增加网络负载和带宽消耗，
+    // 较长的间隔时间会减少网络负载和带宽消耗，但反馈和控制效果会相应降低。通常，rtcp_report_interval_ms的值应根据具体应用的需要和网络情况进行调整。
     int rtcp_report_interval_ms = 1000;
 
     // Transport for outgoing packets.
@@ -176,6 +179,7 @@ class VideoSendStream {
     // Expected delay needed by the renderer, i.e. the frame will be delivered
     // this many milliseconds, if possible, earlier than expected render time.
     // Only valid if `local_renderer` is set.
+    // 指视频渲染引擎在接收到视频数据之后，需要等待多长时间才能将其渲染为可视图像。
     int render_delay_ms = 0;
 
     // Target delay in milliseconds. A positive value indicates this stream is
@@ -198,6 +202,7 @@ class VideoSendStream {
     // An optional encoder selector provided by the user.
     // Overrides VideoEncoderFactory::GetEncoderSelector().
     // Owned by RtpSenderBase.
+    // 可以根据需要选择最佳的编码器来达到最优的编码效果和延迟
     VideoEncoderFactory::EncoderSelectorInterface* encoder_selector = nullptr;
 
     // Per PeerConnection cryptography options.

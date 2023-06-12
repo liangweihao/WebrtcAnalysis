@@ -439,7 +439,7 @@ bool RtpSenderBase::SetTrack(MediaStreamTrackInterface* track) {
   attachment_id_ = (track_ ? GenerateUniqueId() : 0);
   return true;
 }
-
+// 设置ssrc
 void RtpSenderBase::SetSsrc(uint32_t ssrc) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   TRACE_EVENT0("webrtc", "RtpSenderBase::SetSsrc");
@@ -488,6 +488,7 @@ void RtpSenderBase::SetSsrc(uint32_t ssrc) {
     SetFrameEncryptor(frame_encryptor_);
   }
   if (frame_transformer_) {
+    // 帧转换器
     SetEncoderToPacketizerFrameTransformer(frame_transformer_);
   }
   if (encoder_selector_) {
@@ -561,7 +562,7 @@ RTCError RtpSenderBase::DisableEncodingLayers(
   }
   return result;
 }
-
+// 设置包帧转换器
 void RtpSenderBase::SetEncoderToPacketizerFrameTransformer(
     rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
@@ -757,7 +758,7 @@ void AudioRtpSender::ClearSend() {
     RTC_LOG(LS_WARNING) << "ClearAudioSend: ssrc is incorrect: " << ssrc_;
   }
 }
-
+// 创建视频rtp发送器
 rtc::scoped_refptr<VideoRtpSender> VideoRtpSender::Create(
     rtc::Thread* worker_thread,
     const std::string& id,
@@ -765,7 +766,7 @@ rtc::scoped_refptr<VideoRtpSender> VideoRtpSender::Create(
   return rtc::make_ref_counted<VideoRtpSender>(worker_thread, id,
                                                set_streams_observer);
 }
-
+// 视频发送器的构造
 VideoRtpSender::VideoRtpSender(rtc::Thread* worker_thread,
                                const std::string& id,
                                SetStreamsObserver* set_streams_observer)

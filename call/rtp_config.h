@@ -44,6 +44,7 @@ struct NackConfig {
   // Receive side: the time the receiver is prepared to wait for
   // retransmissions.
   // Set to '0' to disable.
+  // 接收端缓存的RTP数据包的历史时长，它用于保证在网络抖动或数据丢失的情况下能够正确播放音视频。
   int rtp_history_ms;
 };
 

@@ -230,7 +230,7 @@ RtpTransmissionManager::AddTrackUnifiedPlan(
   }
   return transceiver->sender();
 }
-
+// 创建发送器
 rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
 RtpTransmissionManager::CreateSender(
     cricket::MediaType media_type,
