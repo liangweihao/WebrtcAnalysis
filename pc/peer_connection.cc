@@ -712,6 +712,7 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
                               ? *configuration.crypto_options
                               : options_.crypto_options;
   config.transport_observer = this;
+  //  基于Call的接收器回调处理 发送封包- 给通话器 -然后在发送
   config.rtcp_handler = InitializeRtcpCallback();
   config.un_demuxable_packet_handler = InitializeUnDemuxablePacketHandler();
   config.event_log = event_log_ptr_;
@@ -776,7 +777,7 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
               OnTransportControllerGatheringState(s);
             }));
       });
-      // PC层数收到网络协议 
+      // PC层数收到网络协议
   transport_controller_->SubscribeIceCandidateGathered(
       [this](const std::string& transport,
              const std::vector<cricket::Candidate>& candidates) {
@@ -1585,7 +1586,7 @@ RTCError PeerConnection::SetConfiguration(
   // Parse ICE servers before hopping to network thread.
   cricket::ServerAddresses stun_servers;
   std::vector<cricket::RelayServerConfig> turn_servers;
-  // 更新配置的时候也要重置一下  
+  // 更新配置的时候也要重置一下
   RTCError parse_error = ParseIceServersOrError(configuration.servers,
                                                 &stun_servers, &turn_servers);
   if (!parse_error.ok()) {
@@ -1710,7 +1711,7 @@ bool PeerConnection::RemoveIceCandidates(
   RTC_DCHECK_RUN_ON(signaling_thread());
   return sdp_handler_->RemoveIceCandidates(candidates);
 }
-
+// 设置比特率
 RTCError PeerConnection::SetBitrate(const BitrateSettings& bitrate) {
   if (!worker_thread()->IsCurrent()) {
     return worker_thread()->BlockingCall([&]() { return SetBitrate(bitrate); });
@@ -1771,7 +1772,7 @@ void PeerConnection::SetAudioRecording(bool recording) {
   auto audio_state = context_->media_engine()->voice().GetAudioState();
   audio_state->SetRecording(recording);
 }
-
+// 添加适配器数据 目前这个函数并没有被运用到
 void PeerConnection::AddAdaptationResource(
     rtc::scoped_refptr<Resource> resource) {
   if (!worker_thread()->IsCurrent()) {
@@ -2080,7 +2081,7 @@ void PeerConnection::OnIceGatheringChange(
   ice_gathering_state_ = new_state;
   Observer()->OnIceGatheringChange(ice_gathering_state_);
 }
-// 通知网络协议已经完成 
+// 通知网络协议已经完成
 void PeerConnection::OnIceCandidate(
     std::unique_ptr<IceCandidateInterface> candidate) {
   if (IsClosed()) {
@@ -2996,7 +2997,7 @@ void PeerConnection::RequestUsagePatternReportForTesting() {
       },
       /* delay_ms= */ 0);
 }
-
+// 初始化一个 rtcp的回调发送器
 std::function<void(const rtc::CopyOnWriteBuffer& packet,
                    int64_t packet_time_us)>
 PeerConnection::InitializeRtcpCallback() {

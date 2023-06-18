@@ -312,7 +312,7 @@ void VideoSendStream::StopPermanentlyAndGetRtpStates(
   *rtp_state_map = send_stream_.GetRtpStates();
   *payload_state_map = send_stream_.GetRtpPayloadStates();
 }
-
+// 视频发送流分发rtcp
 void VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   send_stream_.DeliverRtcp(packet, length);

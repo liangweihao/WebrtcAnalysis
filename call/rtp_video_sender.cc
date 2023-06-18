@@ -706,10 +706,11 @@ DataRate RtpVideoSender::GetPostEncodeOverhead() const {
   }
   return post_encode_overhead;
 }
-
+// rtp视频发送器
 void RtpVideoSender::DeliverRtcp(const uint8_t* packet, size_t length) {
   // Runs on a network thread.
   for (const RtpStreamSender& stream : rtp_streams_)
+  // 控制器协议 处理rtcp包
     stream.rtp_rtcp->IncomingRtcpPacket(rtc::MakeArrayView(packet, length));
 }
 

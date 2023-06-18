@@ -326,7 +326,7 @@ void VideoReceiveStream2::SetLocalSsrc(uint32_t local_ssrc) {
   const_cast<uint32_t&>(config_.rtp.local_ssrc) = local_ssrc;
   rtp_video_stream_receiver_.OnLocalSsrcChange(local_ssrc);
 }
-
+// 视频接收器开始接受流的信息
 void VideoReceiveStream2::Start() {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
 
@@ -351,7 +351,7 @@ void VideoReceiveStream2::Start() {
   } else {
     renderer = this;
   }
-
+  // 遍历所有配置的解码器
   for (const Decoder& decoder : config_.decoders) {
     VideoDecoder::Settings settings;
     settings.set_codec_type(
@@ -365,10 +365,12 @@ void VideoReceiveStream2::Start() {
     {
       // TODO(bugs.webrtc.org/11993): Make this call on the network thread.
       RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
+      // 添加接受编码器  根据编码器的类型创建对应的 解码器
       rtp_video_stream_receiver_.AddReceiveCodec(
           decoder.payload_type, settings.codec_type(),
           decoder.video_format.parameters, raw_payload);
     }
+    // 注册接收到的编码器
     video_receiver_.RegisterReceiveCodec(decoder.payload_type, settings);
   }
 

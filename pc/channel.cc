@@ -293,7 +293,7 @@ bool BaseChannel::SetLocalContent(const MediaContentDescription* content,
   TRACE_EVENT0("webrtc", "BaseChannel::SetLocalContent");
   return SetLocalContent_w(content, type, error_desc);
 }
-
+// 设置远程的内容
 bool BaseChannel::SetRemoteContent(const MediaContentDescription* content,
                                    SdpType type,
                                    std::string& error_desc) {
@@ -734,7 +734,7 @@ bool BaseChannel::UpdateRemoteStreams_w(const MediaContentDescription* content,
       needs_re_registration = payload_type_demuxing_enabled_;
     }
   }
-
+  // 得到远程内容的流参数
   const std::vector<StreamParams>& streams = content->streams();
   const bool new_has_unsignaled_ssrcs = HasStreamWithNoSsrcs(streams);
   const bool old_has_unsignaled_ssrcs = HasStreamWithNoSsrcs(remote_streams_);
@@ -770,6 +770,7 @@ bool BaseChannel::UpdateRemoteStreams_w(const MediaContentDescription* content,
     // stream received later.
     if ((!new_stream.has_ssrcs() && !old_has_unsignaled_ssrcs) ||
         !GetStreamBySsrc(remote_streams_, new_stream.first_ssrc())) {
+          // 通过媒体接收通道 添加接收流
       if (media_receive_channel()->AddRecvStream(new_stream)) {
         RTC_LOG(LS_INFO) << "Add remote ssrc: "
                          << (new_stream.has_ssrcs()
@@ -980,7 +981,7 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   return success;
 }
-
+// 设置远程内容
 bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
                                       SdpType type,
                                       std::string& error_desc) {
@@ -1168,7 +1169,7 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   return success;
 }
-
+// 设置远程内容
 bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
                                       SdpType type,
                                       std::string& error_desc) {

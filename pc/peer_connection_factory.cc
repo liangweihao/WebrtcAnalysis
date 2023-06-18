@@ -244,6 +244,7 @@ PeerConnectionFactory::CreatePeerConnectionOrError(
 
   const FieldTrialsView* trials =
       dependencies.trials ? dependencies.trials.get() : &field_trials();
+      // 工作线程创建 Call
   std::unique_ptr<Call> call =
       worker_thread()->BlockingCall([this, &event_log, trials, &configuration] {
         return CreateCall_w(event_log.get(), *trials, configuration);
@@ -350,6 +351,7 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
       transport_controller_send_factory_.get();
   call_config.metronome = metronome_.get();
   call_config.pacer_burst_interval = configuration.pacer_burst_interval;
+  // 创建call启动器
   return std::unique_ptr<Call>(
       context_->call_factory()->CreateCall(call_config));
 }

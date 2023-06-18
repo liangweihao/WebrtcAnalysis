@@ -95,6 +95,7 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
 
   RtpTransportConfig transportConfig = config.ExtractTransportConfig();
 
+// 创建了一个Call
   Call* call =
       Call::Create(config, Clock::GetRealTimeClock(),
                    config.rtp_transport_controller_send_factory->Create(
@@ -102,6 +103,7 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
 
   if (!send_degradation_configs.empty() ||
       !receive_degradation_configs.empty()) {
+        // 在DegradedCall中，用户可能会遇到诸如音视频卡顿、传输延迟、像素化、丢帧或整体音视频质量差等问题。这些问题会显著影响通信体验，使用户难以有效地进行沟通或理解对方的内容。
     return new DegradedCall(absl::WrapUnique(call), send_degradation_configs,
                             receive_degradation_configs);
   }

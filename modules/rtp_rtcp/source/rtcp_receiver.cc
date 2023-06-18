@@ -206,13 +206,13 @@ RTCPReceiver::RTCPReceiver(const RtpRtcpInterface::Configuration& config,
 }
 
 RTCPReceiver::~RTCPReceiver() {}
-
+// rtcp接收器 解析包
 void RTCPReceiver::IncomingPacket(rtc::ArrayView<const uint8_t> packet) {
   if (packet.empty()) {
     RTC_LOG(LS_WARNING) << "Incoming empty RTCP packet";
     return;
   }
-
+  // 解析包的信息
   PacketInformation packet_information;
   if (!ParseCompoundPacket(packet, &packet_information))
     return;
@@ -377,7 +377,7 @@ std::vector<ReportBlockData> RTCPReceiver::GetLatestReportBlockData() const {
   }
   return result;
 }
-
+//  从packet解析 控制器协议
 bool RTCPReceiver::ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
                                        PacketInformation* packet_information) {
   MutexLock lock(&rtcp_receiver_lock_);
@@ -405,10 +405,12 @@ bool RTCPReceiver::ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
     }
 
     switch (rtcp_block.type()) {
+      // 发送器的类型
       case rtcp::SenderReport::kPacketType:
         valid = HandleSenderReport(rtcp_block, packet_information);
         received_blocks[packet_information->remote_ssrc].sender_report = true;
         break;
+        // 接收器类型
       case rtcp::ReceiverReport::kPacketType:
         valid = HandleReceiverReport(rtcp_block, packet_information);
         break;
@@ -476,6 +478,7 @@ bool RTCPReceiver::ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
 
   if (num_skipped_packets_ > 0) {
     const int64_t now_ms = clock_->TimeInMilliseconds();
+    // 对日志输出频率做一下控制
     if (now_ms - last_skipped_packets_warning_ms_ >= kMaxWarningLogIntervalMs) {
       last_skipped_packets_warning_ms_ = now_ms;
       RTC_LOG(LS_WARNING)
@@ -487,6 +490,7 @@ bool RTCPReceiver::ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
   }
 
   if (!valid) {
+    // 无效的packet数量记录
     ++num_skipped_packets_;
     return false;
   }
@@ -495,11 +499,12 @@ bool RTCPReceiver::ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
     if (rb.second.sender_report && !rb.second.dlrr) {
       auto rtt_stats = non_sender_rtts_.find(rb.first);
       if (rtt_stats != non_sender_rtts_.end()) {
+        //
         rtt_stats->second.Invalidate();
       }
     }
   }
-
+  // 通知rtcp更新
   if (packet_type_counter_observer_) {
     packet_type_counter_observer_->RtcpPacketTypesCounterUpdated(
         local_media_ssrc(), packet_type_counter_);
@@ -1075,7 +1080,7 @@ void RTCPReceiver::NotifyTmmbrUpdated() {
   // Send tmmbn to inform remote clients about the new bandwidth.
   rtp_rtcp_->SetTmmbn(std::move(bounding));
 }
-
+// 收到解析后的包内容
 // Holding no Critical section.
 void RTCPReceiver::TriggerCallbacksFromRtcpPacket(
     const PacketInformation& packet_information) {
@@ -1093,6 +1098,7 @@ void RTCPReceiver::TriggerCallbacksFromRtcpPacket(
     if (!packet_information.nack_sequence_numbers.empty()) {
       RTC_LOG(LS_VERBOSE) << "Incoming NACK length: "
                           << packet_information.nack_sequence_numbers.size();
+                          // 接收到nack重试
       rtp_rtcp_->OnReceivedNack(packet_information.nack_sequence_numbers);
     }
   }
@@ -1112,6 +1118,7 @@ void RTCPReceiver::TriggerCallbacksFromRtcpPacket(
         RTC_LOG(LS_VERBOSE)
             << "Incoming FIR from SSRC " << packet_information.remote_ssrc;
       }
+      // 收到ssrc
       rtcp_intra_frame_observer_->OnReceivedIntraFrameRequest(
           local_media_ssrc());
     }
@@ -1122,6 +1129,7 @@ void RTCPReceiver::TriggerCallbacksFromRtcpPacket(
         packet_information.loss_notification.get();
     RTC_DCHECK(loss_notification);
     if (loss_notification->media_ssrc() == local_media_ssrc()) {
+      // 收到通知
       rtcp_loss_notification_observer_->OnReceivedLossNotification(
           loss_notification->media_ssrc(), loss_notification->last_decoded(),
           loss_notification->last_received(),

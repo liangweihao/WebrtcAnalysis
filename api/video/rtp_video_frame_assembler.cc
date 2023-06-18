@@ -36,6 +36,7 @@
 
 namespace webrtc {
 namespace {
+  // 用于创建数据包解包器。解包器是一种用于将数据包还原为原始数据的工具或组件。
 std::unique_ptr<VideoRtpDepacketizer> CreateDepacketizer(
     RtpVideoFrameAssembler::PayloadFormat payload_format) {
   switch (payload_format) {
@@ -326,7 +327,7 @@ bool RtpVideoFrameAssembler::Impl::ParseGenericDescriptorExtension(
   video_header.height = generic_frame_descriptor.Height();
   return true;
 }
-
+// rtp视频帧合并器
 RtpVideoFrameAssembler::RtpVideoFrameAssembler(PayloadFormat payload_format)
     : impl_(std::make_unique<Impl>(CreateDepacketizer(payload_format))) {}
 

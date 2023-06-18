@@ -1685,7 +1685,7 @@ void WebRtcVideoReceiveChannel::DeleteReceiveStream(
 bool WebRtcVideoReceiveChannel::AddRecvStream(const StreamParams& sp) {
   return AddRecvStream(sp, false);
 }
-
+// 通过接受通道 添加接受流
 bool WebRtcVideoReceiveChannel::AddRecvStream(const StreamParams& sp,
                                               bool default_stream) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
@@ -1737,6 +1737,7 @@ bool WebRtcVideoReceiveChannel::AddRecvStream(const StreamParams& sp,
   if (unsignaled_frame_transformer_ && !config.frame_transformer)
     config.frame_transformer = unsignaled_frame_transformer_;
 
+//  创建一个视频流接收器
   auto receive_stream =
       new WebRtcVideoReceiveStream(call_, sp, std::move(config), default_stream,
                                    recv_codecs_, flexfec_config);
@@ -3171,7 +3172,8 @@ void WebRtcVideoSendChannel::WebRtcVideoSendStream::GenerateKeyFrame(
         << "Absent send stream; ignoring request to generate keyframe.";
   }
 }
-
+// 创建webrtc video 流接收器
+//  创建接收器
 WebRtcVideoReceiveChannel::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     webrtc::Call* call,
     const StreamParams& sp,

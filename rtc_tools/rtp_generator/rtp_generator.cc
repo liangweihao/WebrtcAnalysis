@@ -253,6 +253,7 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
             send_config.video_fps, *task_queue_);
     frame_generator->Init();
 
+//  这里目前是不会走到的 属于工具测试类
     VideoSendStream* video_send_stream = call_->CreateVideoSendStream(
         std::move(video_config), std::move(encoder_config));
     video_send_stream->SetSource(

@@ -653,6 +653,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   // The unique_ptr belongs to the worker thread, but the Call object manages
   // its own thread safety.
+//   通话对象
   std::unique_ptr<Call> call_ RTC_GUARDED_BY(worker_thread());
   ScopedTaskSafety signaling_thread_safety_;
   rtc::scoped_refptr<PendingTaskSafetyFlag> network_thread_safety_;

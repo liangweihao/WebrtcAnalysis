@@ -1632,6 +1632,7 @@ void SdpOfferAnswerHandler::SetLocalDescription(
       });
 }
 // 应用本地描述
+// 更新本地的会话描述
 RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
     std::unique_ptr<SessionDescriptionInterface> desc,
     const std::map<std::string, const cricket::ContentGroup*>&
@@ -1772,7 +1773,7 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
     // Remove unused channels if MediaContentDescription is rejected.
     RemoveUnusedChannels(local_description()->description());
   }
-
+  // 更新本地描述
   error = UpdateSessionState(type, cricket::CS_LOCAL,
                              local_description()->description(),
                              bundle_groups_by_mid);
@@ -1877,7 +1878,7 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
 
   return RTCError::OK();
 }
-
+// 设置远程描述
 void SdpOfferAnswerHandler::SetRemoteDescription(
     SetSessionDescriptionObserver* observer,
     SessionDescriptionInterface* desc_ptr) {
@@ -1909,7 +1910,7 @@ void SdpOfferAnswerHandler::SetRemoteDescription(
                 std::move(operations_chain_callback)));
       });
 }
-
+// 设置远程描述
 void SdpOfferAnswerHandler::SetRemoteDescription(
     std::unique_ptr<SessionDescriptionInterface> desc,
     rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer) {
@@ -2847,7 +2848,8 @@ void SdpOfferAnswerHandler::ChangeSignalingState(
   signaling_state_ = signaling_state;
   pc_->Observer()->OnSignalingChange(signaling_state_);
 }
-
+// 更新会话的状态
+// 发布媒体描述
 RTCError SdpOfferAnswerHandler::UpdateSessionState(
     SdpType type,
     cricket::ContentSource source,
@@ -4772,7 +4774,7 @@ void SdpOfferAnswerHandler::EnableSending() {
     }
   }
 }
-
+// 发布媒体描述
 RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     SdpType type,
     cricket::ContentSource source,
@@ -4831,6 +4833,7 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     for (const auto& entry : channels) {
       std::string error;
       bool success = context_->worker_thread()->BlockingCall([&]() {
+        // 设置内容
         return (source == cricket::CS_LOCAL)
                    ? entry.first->SetLocalContent(entry.second, type, error)
                    : entry.first->SetRemoteContent(entry.second, type, error);

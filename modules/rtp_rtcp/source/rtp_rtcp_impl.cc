@@ -192,7 +192,7 @@ absl::optional<uint32_t> ModuleRtpRtcpImpl::FlexfecSsrc() const {
   }
   return absl::nullopt;
 }
-
+// 处理rtcp包
 void ModuleRtpRtcpImpl::IncomingRtcpPacket(
     rtc::ArrayView<const uint8_t> rtcp_packet) {
   rtcp_receiver_.IncomingPacket(rtcp_packet);

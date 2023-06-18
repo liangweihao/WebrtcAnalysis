@@ -308,7 +308,7 @@ VideoSendStreamImpl::~VideoSendStreamImpl() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_LOG(LS_INFO) << "~VideoSendStreamImpl: " << config_->ToString();
 }
-
+// 视频流发送 具体实现
 void VideoSendStreamImpl::DeliverRtcp(const uint8_t* packet, size_t length) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   rtp_video_sender_->DeliverRtcp(packet, length);

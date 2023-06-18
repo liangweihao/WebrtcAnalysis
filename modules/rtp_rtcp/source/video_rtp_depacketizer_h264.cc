@@ -58,7 +58,7 @@ bool ParseStapAStartOffsets(const uint8_t* nalu_ptr,
   }
   return true;
 }
-
+// 处理整个帧
 absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
     rtc::CopyOnWriteBuffer rtp_payload) {
   const uint8_t* const payload_data = rtp_payload.cdata();
@@ -74,10 +74,12 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
   auto& h264_header = parsed_payload->video_header.video_type_header
                           .emplace<RTPVideoHeaderH264>();
 
+// kNalHeaderSize是指H.264视频编码中NALU头部的大小
   const uint8_t* nalu_start = payload_data + kNalHeaderSize;
   const size_t nalu_length = rtp_payload.size() - kNalHeaderSize;
   uint8_t nal_type = payload_data[0] & kH264TypeMask;
   std::vector<size_t> nalu_start_offsets;
+  // STAP-A包则允许将多个NALU聚合在一起，以减少传输的开销。
   if (nal_type == H264::NaluType::kStapA) {
     // Skip the StapA header (StapA NAL type + length).
     if (rtp_payload.size() <= kStapAHeaderSize) {
@@ -105,6 +107,7 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
     size_t start_offset = nalu_start_offsets[i];
     // End offset is actually start offset for next unit, excluding length field
     // so remove that from this units length.
+    // kLengthFieldSize是指在H.264视频编码中NALU的长度字段的大小。
     size_t end_offset = nalu_start_offsets[i + 1] - kLengthFieldSize;
     if (end_offset - start_offset < H264::kNaluTypeSize) {
       RTC_LOG(LS_ERROR) << "STAP-A packet too short";
@@ -115,6 +118,7 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
     nalu.type = payload_data[start_offset] & kH264TypeMask;
     nalu.sps_id = -1;
     nalu.pps_id = -1;
+    // kNaluTypeSize是指在H.264视频编码中NALU类型字段的大小
     start_offset += H264::kNaluTypeSize;
 
     switch (nalu.type) {
@@ -127,9 +131,10 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
         rtc::Buffer output_buffer;
         if (start_offset)
           output_buffer.AppendData(payload_data, start_offset);
-
+        // 读取sps
         absl::optional<SpsParser::SpsState> sps;
 
+// 写到 输出的缓冲区
         SpsVuiRewriter::ParseResult result = SpsVuiRewriter::ParseAndRewriteSps(
             &payload_data[start_offset], end_offset - start_offset, &sps,
             nullptr, &output_buffer, SpsVuiRewriter::Direction::kIncoming);
@@ -153,6 +158,7 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
                 &output_buffer[length_field_offset], rewritten_size);
           }
 
+// 设置输出的关键帧
           parsed_payload->video_payload.SetData(output_buffer.data(),
                                                 output_buffer.size());
           // Append rest of packet.
@@ -164,12 +170,14 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
         }
 
         if (sps) {
+          // 设置sps的信息
           parsed_payload->video_header.width = sps->width;
           parsed_payload->video_header.height = sps->height;
           nalu.sps_id = sps->id;
         } else {
           RTC_LOG(LS_WARNING) << "Failed to parse SPS id from SPS slice.";
         }
+        // 用于表示视频帧的关键帧（I帧）类型。
         parsed_payload->video_header.frame_type =
             VideoFrameType::kVideoFrameKey;
         break;
@@ -189,9 +197,11 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ProcessStapAOrSingleNalu(
         break;
       }
       case H264::NaluType::kIdr:
+      // 用于表示视频帧的关键帧（I帧）类型。
         parsed_payload->video_header.frame_type =
             VideoFrameType::kVideoFrameKey;
         [[fallthrough]];
+        // 表示视频编码中的切片（slice）
       case H264::NaluType::kSlice: {
         absl::optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
             &payload_data[start_offset], end_offset - start_offset);
@@ -287,7 +297,7 @@ absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> ParseFuaNalu(
 }
 
 }  // namespace
-
+// 解析封包中的帧数据
 absl::optional<VideoRtpDepacketizer::ParsedRtpPayload>
 VideoRtpDepacketizerH264::Parse(rtc::CopyOnWriteBuffer rtp_payload) {
   if (rtp_payload.size() == 0) {
@@ -296,7 +306,7 @@ VideoRtpDepacketizerH264::Parse(rtc::CopyOnWriteBuffer rtp_payload) {
   }
 
   uint8_t nal_type = rtp_payload.cdata()[0] & kH264TypeMask;
-
+// NALU是Network Abstraction Layer Unit的缩写，用于将视频数据进行分割和组织。kFuA代表分片类型的NALU，它用于将一个帧的视频数据分成多个分片进行传输
   if (nal_type == H264::NaluType::kFuA) {
     // Fragmented NAL units (FU-A).
     return ParseFuaNalu(std::move(rtp_payload));

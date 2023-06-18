@@ -19,7 +19,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 
 namespace webrtc {
-
+// VideoFecGenerator是一个用于生成视频前向纠错(FEC)数据的组件或类。FEC是一种错误纠正技术，可以在视频传输过程中检测和修复数据包的丢失或损坏
 class VideoFecGenerator {
  public:
   VideoFecGenerator() = default;

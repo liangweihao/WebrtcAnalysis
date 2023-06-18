@@ -755,7 +755,7 @@ void Call::SetClientBitratePreferences(const BitrateSettings& preferences) {
   RTC_DCHECK_RUN_ON(worker_thread_);
   GetTransportControllerSend()->SetClientBitratePreferences(preferences);
 }
-
+//  实际上就是本身
 PacketReceiver* Call::Receiver() {
   return this;
 }
@@ -1013,6 +1013,7 @@ webrtc::VideoReceiveStreamInterface* Call::CreateVideoReceiveStream(
   // `video_receiver_controller_` need to live on the network thread).
   // TODO(crbug.com/1381982): Re-enable decode synchronizer once the Chromium
   // API has adapted to the new Metronome interface.
+  // 创建视频接受流
   VideoReceiveStream2* receive_stream = new VideoReceiveStream2(
       task_queue_factory_, this, num_cpu_cores_,
       transport_send_->packet_router(), std::move(configuration),
@@ -1021,7 +1022,7 @@ webrtc::VideoReceiveStreamInterface* Call::CreateVideoReceiveStream(
   // TODO(bugs.webrtc.org/11993): Set this up asynchronously on the network
   // thread.
   receive_stream->RegisterWithTransport(&video_receiver_controller_);
-
+// RTX SSRC的作用是在接收端收到丢失或无效的数据包时，通过RTX SSRC字段可以找到原始数据包，并进行重传。通过这种方式，可以提高数据传输的可靠性和可恢复性。
   if (receive_stream->rtx_ssrc()) {
     // We record identical config for the rtx stream as for the main
     // stream. Since the transport_send_cc negotiation is per payload
@@ -1029,12 +1030,15 @@ webrtc::VideoReceiveStreamInterface* Call::CreateVideoReceiveStream(
     // that is unlikely to matter in practice.
     RegisterReceiveStream(receive_stream->rtx_ssrc(), receive_stream);
   }
+  // 远程原始包接受
   RegisterReceiveStream(receive_stream->remote_ssrc(), receive_stream);
+  // 保存视频流接收器
   video_receive_streams_.insert(receive_stream);
 
   ConfigureSync(receive_stream->sync_group());
-
+  //  通知网络状态
   receive_stream->SignalNetworkState(video_network_state_);
+  // 更新一下所有的网络状态
   UpdateAggregateNetworkState();
   return receive_stream;
 }
@@ -1364,7 +1368,7 @@ void Call::ConfigureSync(absl::string_view sync_group) {
     }
   }
 }
-
+//  实际上 发送的call 就是通过这个函数来接受包的
 void Call::DeliverRtcpPacket(rtc::CopyOnWriteBuffer packet) {
   RTC_DCHECK_RUN_ON(worker_thread_);
   RTC_DCHECK(IsRtcpPacket(packet));
@@ -1372,21 +1376,23 @@ void Call::DeliverRtcpPacket(rtc::CopyOnWriteBuffer packet) {
 
   receive_stats_.AddReceivedRtcpBytes(static_cast<int>(packet.size()));
   bool rtcp_delivered = false;
+  // 视频接收器
   for (VideoReceiveStream2* stream : video_receive_streams_) {
     if (stream->DeliverRtcp(packet.cdata(), packet.size()))
       rtcp_delivered = true;
   }
 
+// 音频接收器
   for (AudioReceiveStreamImpl* stream : audio_receive_streams_) {
     stream->DeliverRtcp(packet.cdata(), packet.size());
     rtcp_delivered = true;
   }
-
+// 视频分发器
   for (VideoSendStream* stream : video_send_streams_) {
     stream->DeliverRtcp(packet.cdata(), packet.size());
     rtcp_delivered = true;
   }
-
+  // 音频ssrc处理
   for (auto& kv : audio_send_ssrcs_) {
     kv.second->DeliverRtcp(packet.cdata(), packet.size());
     rtcp_delivered = true;
