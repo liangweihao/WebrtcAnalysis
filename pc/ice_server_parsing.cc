@@ -207,7 +207,7 @@ RTCError ParseIceServerUrl(
     }
     turn_transport_type = *proto;
   }
-
+  // 解析服务器的类型和地址
   auto [service_type, hoststring] =
       GetServiceTypeAndHostnameFromUri(uri_without_transport);
   if (service_type == ServiceType::INVALID) {
@@ -242,7 +242,7 @@ RTCError ParseIceServerUrl(
                          "ICE server parsing failed: Invalid url with long "
                          "deprecated user@host syntax");
   }
-
+  // 解析域名和端口
   auto [success, address, port] =
       ParseHostnameAndPortFromString(hoststring, default_port);
   if (!success) {
@@ -257,9 +257,11 @@ RTCError ParseIceServerUrl(
                          "ICE server parsing failed: Invalid port");
   }
 
+// 将解析出来的服务 分别插入到stun 和 turn中
   switch (service_type) {
     case ServiceType::STUN:
     case ServiceType::STUNS:
+    // 地址和端口
       stun_servers->insert(rtc::SocketAddress(address, port));
       break;
     case ServiceType::TURN:
@@ -277,6 +279,7 @@ RTCError ParseIceServerUrl(
       // handshake (SNI and Certificate verification).
       absl::string_view hostname =
           server.hostname.empty() ? address : server.hostname;
+          // 域名和端口
       rtc::SocketAddress socket_address(hostname, port);
       if (!server.hostname.empty()) {
         rtc::IPAddress ip;
@@ -289,11 +292,14 @@ RTCError ParseIceServerUrl(
               "IceServer has hostname field set, but URI does not "
               "contain an IP address.");
         }
+        // 设置ip
         socket_address.SetResolvedIP(ip);
       }
+      // 解析服务期完成
       cricket::RelayServerConfig config =
           cricket::RelayServerConfig(socket_address, server.username,
                                      server.password, turn_transport_type);
+                                    //  tls协议
       if (server.tls_cert_policy ==
           PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck) {
         config.tls_cert_policy =
@@ -301,7 +307,7 @@ RTCError ParseIceServerUrl(
       }
       config.tls_alpn_protocols = server.tls_alpn_protocols;
       config.tls_elliptic_curves = server.tls_elliptic_curves;
-
+      // 保存到turn服务器配置中
       turn_servers->push_back(config);
       break;
     }
@@ -316,11 +322,12 @@ RTCError ParseIceServerUrl(
 }
 
 }  // namespace
-
+// 解析所有的服务到trun 或者 stun
 RTCError ParseIceServersOrError(
     const PeerConnectionInterface::IceServers& servers,
     cricket::ServerAddresses* stun_servers,
     std::vector<cricket::RelayServerConfig>* turn_servers) {
+      // 遍历所有的ice地址
   for (const PeerConnectionInterface::IceServer& server : servers) {
     if (!server.urls.empty()) {
       for (const std::string& url : server.urls) {
@@ -328,6 +335,7 @@ RTCError ParseIceServersOrError(
           LOG_AND_RETURN_ERROR(RTCErrorType::SYNTAX_ERROR,
                                "ICE server parsing failed: Empty uri.");
         }
+        // 解析ice 
         RTCError err =
             ParseIceServerUrl(server, url, stun_servers, turn_servers);
         if (!err.ok()) {
@@ -343,6 +351,7 @@ RTCError ParseIceServersOrError(
         return err;
       }
     } else {
+      // 啥都没有
       LOG_AND_RETURN_ERROR(RTCErrorType::SYNTAX_ERROR,
                            "ICE server parsing failed: Empty uri.");
     }

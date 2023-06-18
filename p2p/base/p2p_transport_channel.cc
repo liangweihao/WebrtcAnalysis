@@ -113,7 +113,7 @@ bool IceCredentialsChanged(absl::string_view old_ufrag,
   // endpoints that only change one, we'll treat this as an ICE restart.
   return (old_ufrag != new_ufrag) || (old_pwd != new_pwd);
 }
-
+// 创建数据通道 
 std::unique_ptr<P2PTransportChannel> P2PTransportChannel::Create(
     absl::string_view transport_name,
     int component,
@@ -236,7 +236,7 @@ P2PTransportChannel::~P2PTransportChannel() {
   }
   resolvers_.clear();
 }
-
+// 添加分配会话  注册一些列的状态回调
 // Add the allocator session to our list so that we know which sessions
 // are still active.
 void P2PTransportChannel::AddAllocatorSession(
@@ -246,12 +246,14 @@ void P2PTransportChannel::AddAllocatorSession(
   session->set_generation(static_cast<uint32_t>(allocator_sessions_.size()));
   session->SignalPortReady.connect(this, &P2PTransportChannel::OnPortReady);
   session->SignalPortsPruned.connect(this, &P2PTransportChannel::OnPortsPruned);
+  // 网络准备完成
   session->SignalCandidatesReady.connect(
       this, &P2PTransportChannel::OnCandidatesReady);
   session->SignalCandidateError.connect(this,
                                         &P2PTransportChannel::OnCandidateError);
   session->SignalCandidatesRemoved.connect(
       this, &P2PTransportChannel::OnCandidatesRemoved);
+      // 网络配置完成
   session->SignalCandidatesAllocationDone.connect(
       this, &P2PTransportChannel::OnCandidatesAllocationDone);
   if (!allocator_sessions_.empty()) {
@@ -276,6 +278,7 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
                                        &P2PTransportChannel::OnReadPacket);
   connection->SignalReadyToSend.connect(this,
                                         &P2PTransportChannel::OnReadyToSend);
+                                        // 连接状态
   connection->SignalStateChange.connect(
       this, &P2PTransportChannel::OnConnectionStateChange);
   connection->SignalDestroyed.connect(
@@ -290,6 +293,7 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
                          webrtc::IceCandidatePairConfigType::kAdded);
 
   connections_.push_back(connection);
+  // 连接被添加
   ice_controller_->OnConnectionAdded(connection);
 }
 
@@ -847,7 +851,7 @@ int P2PTransportChannel::check_receiving_interval() const {
                   config_.receiving_timeout_or_default() / 10);
 }
 
-void P2PTransportChannel::MaybeStartGathering() {
+void P2PTransportChannel::PortAllocator::CreateSession() {
   RTC_DCHECK_RUN_ON(network_thread_);
   // TODO(bugs.webrtc.org/14605): ensure tie_breaker_ is set.
   if (ice_parameters_.ufrag.empty() || ice_parameters_.pwd.empty()) {
@@ -908,6 +912,7 @@ void P2PTransportChannel::MaybeStartGathering() {
         OnCandidatesAllocationDone(raw_pooled_session);
       }
     } else {
+      // 通过端口分配器创建 端口分配器会话
       AddAllocatorSession(allocator_->CreateSession(
           transport_name(), component(), ice_parameters_.ufrag,
           ice_parameters_.pwd));
@@ -961,13 +966,14 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession* session,
   ice_controller_->OnImmediateSortAndSwitchRequest(
       IceSwitchReason::NEW_CONNECTION_FROM_LOCAL_CANDIDATE);
 }
-
+// 服务器连接完成
 // A new candidate is available, let listeners know
 void P2PTransportChannel::OnCandidatesReady(
     PortAllocatorSession* session,
     const std::vector<Candidate>& candidates) {
   RTC_DCHECK_RUN_ON(network_thread_);
   for (size_t i = 0; i < candidates.size(); ++i) {
+    // 数据通道收到数据以后 发送给传输控制器
     SignalCandidateGathered(this, candidates[i]);
   }
 }
@@ -1117,7 +1123,7 @@ void P2PTransportChannel::OnUnknownAddress(PortInterface* port,
       return;
     }
   }
-
+  // 根据端口创建连接器
   Connection* connection =
       port->CreateConnection(remote_candidate, PortInterface::ORIGIN_THIS_PORT);
   if (!connection) {

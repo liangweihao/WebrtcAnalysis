@@ -43,6 +43,7 @@ class StunBindingRequest : public StunRequest {
                      const rtc::SocketAddress& addr,
                      int64_t start_time)
       : StunRequest(port->request_manager(),
+      // 请求绑定
                     std::make_unique<StunMessage>(STUN_BINDING_REQUEST)),
         port_(port),
         server_addr_(addr),
@@ -51,6 +52,7 @@ class StunBindingRequest : public StunRequest {
   const rtc::SocketAddress& server_addr() const { return server_addr_; }
 
   void OnResponse(StunMessage* response) override {
+    // 得到STUN的IP地址
     const StunAddressAttribute* addr_attr =
         response->GetAddress(STUN_ATTR_MAPPED_ADDRESS);
     if (!addr_attr) {
@@ -59,6 +61,7 @@ class StunBindingRequest : public StunRequest {
                addr_attr->family() != STUN_ADDRESS_IPV6) {
       RTC_LOG(LS_ERROR) << "Binding address has bad family";
     } else {
+      // 服务器地址板顶成功
       rtc::SocketAddress addr(addr_attr->ipaddr(), addr_attr->port());
       port_->OnStunBindingRequestSucceeded(this->Elapsed(), server_addr_, addr);
     }
@@ -218,6 +221,7 @@ bool UDPPort::Init() {
   stun_keepalive_lifetime_ = GetStunKeepaliveLifetime();
   if (!SharedSocket()) {
     RTC_DCHECK(socket_ == nullptr);
+    // 注册socket
     socket_ = socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(Network()->GetBestIP(), 0), min_port(), max_port());
     if (!socket_) {
@@ -236,14 +240,14 @@ UDPPort::~UDPPort() {
   if (!SharedSocket())
     delete socket_;
 }
-
+// 来自于CreateUDPPorts
 void UDPPort::PrepareAddress() {
   RTC_DCHECK(request_manager_.empty());
   if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND) {
     OnLocalAddressReady(socket_, socket_->GetLocalAddress());
   }
 }
-
+// 可能准备STUN网络
 void UDPPort::MaybePrepareStunCandidate() {
   // Sending binding request to the STUN server if address is available to
   // prepare STUN candidate.
@@ -288,11 +292,12 @@ Connection* UDPPort::CreateConnection(const Candidate& address,
              mdns_name_registration_status() !=
                  MdnsNameRegistrationStatus::kNotStarted);
 
+// 创建STUN连接
   Connection* conn = new ProxyConnection(NewWeakPtr(), 0, address);
   AddOrReplaceConnection(conn);
   return conn;
 }
-
+// stun实际上是UDP传输
 int UDPPort::SendTo(const void* data,
                     size_t size,
                     const rtc::SocketAddress& addr,
@@ -300,6 +305,7 @@ int UDPPort::SendTo(const void* data,
                     bool payload) {
   rtc::PacketOptions modified_options(options);
   CopyPortInformationToPacketInfo(&modified_options.info_signaled_after_sent);
+  // 通过socket传输数据
   int sent = socket_->SendTo(data, size, addr, modified_options);
   if (sent < 0) {
     error_ = socket_->GetError();
@@ -368,7 +374,7 @@ void UDPPort::GetStunStats(absl::optional<StunStats>* stats) {
 void UDPPort::set_stun_keepalive_delay(const absl::optional<int>& delay) {
   stun_keepalive_delay_ = delay.value_or(STUN_KEEPALIVE_INTERVAL);
 }
-
+// 准备本地的地址
 void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
                                   const rtc::SocketAddress& address) {
   // When adapter enumeration is disabled and binding to the any address, the
@@ -379,8 +385,9 @@ void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
 
   // If MaybeSetDefaultLocalAddress fails, we keep the "any" IP so that at
   // least the port is listening.
+  // 获取本地的ip地址
   MaybeSetDefaultLocalAddress(&addr);
-
+  // 添加IP地址 通知
   AddAddress(addr, addr, rtc::SocketAddress(), UDP_PROTOCOL_NAME, "", "",
              LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST, 0, "", false);
   MaybePrepareStunCandidate();
@@ -435,6 +442,7 @@ void UDPPort::SendStunBindingRequests() {
     // incremented (even if the SocketAddress itself still exists). So make a
     // copy of the loop iterator, which may be safely invalidated.
     ServerAddresses::const_iterator addr = it++;
+    // 循环遍历发送绑定请求
     SendStunBindingRequest(*addr);
   }
 }
@@ -480,7 +488,9 @@ void UDPPort::SendStunBindingRequest(const rtc::SocketAddress& stun_addr) {
 
   } else if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND) {
     // Check if `server_addr_` is compatible with the port's ip.
+    // 判断端口和本地的地址是否能够兼容
     if (IsCompatibleAddress(stun_addr)) {
+      // 发送绑定请求
       request_manager_.Send(
           new StunBindingRequest(this, stun_addr, rtc::TimeMillis()));
     } else {
@@ -500,6 +510,7 @@ bool UDPPort::MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const {
     return true;
   }
   rtc::IPAddress default_address;
+  // 获取本地的默认ip地址
   bool result =
       Network()->default_local_address_provider()->GetDefaultLocalAddress(
           addr->family(), &default_address);
@@ -510,7 +521,7 @@ bool UDPPort::MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const {
   addr->SetIP(default_address);
   return true;
 }
-
+// stun绑定成功
 void UDPPort::OnStunBindingRequestSucceeded(
     int rtt_ms,
     const rtc::SocketAddress& stun_server_addr,
@@ -524,6 +535,7 @@ void UDPPort::OnStunBindingRequestSucceeded(
       bind_request_succeeded_servers_.end()) {
     return;
   }
+  // 存储stun服务
   bind_request_succeeded_servers_.insert(stun_server_addr);
   // If socket is shared and `stun_reflected_addr` is equal to local socket
   // address and mDNS obfuscation is not enabled, or if the same address has
@@ -542,6 +554,7 @@ void UDPPort::OnStunBindingRequestSucceeded(
     rtc::StringBuilder url;
     url << "stun:" << stun_server_addr.hostname() << ":"
         << stun_server_addr.port();
+        // 将STUN返回的公网地址保存下来
     AddAddress(stun_reflected_addr, socket_->GetLocalAddress(), related_address,
                UDP_PROTOCOL_NAME, "", "", STUN_PORT_TYPE,
                ICE_TYPE_PREFERENCE_SRFLX, 0, url.str(), false);
@@ -566,7 +579,7 @@ void UDPPort::OnStunBindingOrResolveRequestFailed(
   bind_request_failed_servers_.insert(stun_server_addr);
   MaybeSetPortCompleteOrError();
 }
-
+// 设置端口完成
 void UDPPort::MaybeSetPortCompleteOrError() {
   if (mdns_name_registration_status() ==
       MdnsNameRegistrationStatus::kInProgress) {
@@ -592,18 +605,20 @@ void UDPPort::MaybeSetPortCompleteOrError() {
   // request succeeded for any stun server, or the socket is shared.
   if (server_addresses_.empty() || bind_request_succeeded_servers_.size() > 0 ||
       SharedSocket()) {
+        // 注册UDP端口完成的回调
     SignalPortComplete(this);
   } else {
     SignalPortError(this);
   }
 }
-
+// 发送消息的具体实现类
 // TODO(?): merge this with SendTo above.
 void UDPPort::OnSendPacket(const void* data, size_t size, StunRequest* req) {
   StunBindingRequest* sreq = static_cast<StunBindingRequest*>(req);
   rtc::PacketOptions options(StunDscpValue());
   options.info_signaled_after_sent.packet_type = rtc::PacketType::kStunMessage;
   CopyPortInformationToPacketInfo(&options.info_signaled_after_sent);
+  // 通过socket发送数据
   if (socket_->SendTo(data, size, sreq->server_addr(), options) < 0) {
     RTC_LOG_ERR_EX(LS_ERROR, socket_->GetError())
         << "UDP send of " << size << " bytes to host "
@@ -668,7 +683,7 @@ StunPort::StunPort(rtc::Thread* thread,
   set_type(STUN_PORT_TYPE);
   set_server_addresses(servers);
 }
-
+// 对于stun 发送stun绑定请求
 void StunPort::PrepareAddress() {
   SendStunBindingRequests();
 }

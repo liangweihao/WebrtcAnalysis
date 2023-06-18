@@ -129,7 +129,7 @@ class NATSocket : public Socket, public sigslot::has_slots<> {
     RTC_DCHECK(connected_);
     return SendTo(data, size, remote_addr_);
   }
-
+  //  发送数据
   int SendTo(const void* data,
              size_t size,
              const SocketAddress& addr) override {

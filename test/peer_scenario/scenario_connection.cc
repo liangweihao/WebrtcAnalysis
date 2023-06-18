@@ -71,7 +71,7 @@ class ScenarioIceConnectionImpl : public ScenarioIceConnection,
   std::unique_ptr<SessionDescriptionInterface> local_description_
       RTC_GUARDED_BY(signaling_thread_);
 };
-
+// 创建 --    测试类先忽略
 std::unique_ptr<ScenarioIceConnection> ScenarioIceConnection::Create(
     webrtc::test::NetworkEmulationManagerImpl* net,
     IceConnectionObserver* observer) {
@@ -80,6 +80,7 @@ std::unique_ptr<ScenarioIceConnection> ScenarioIceConnection::Create(
 
 ScenarioIceConnectionImpl::ScenarioIceConnectionImpl(
     test::NetworkEmulationManagerImpl* net,
+    // ice连接状态
     IceConnectionObserver* observer)
     : observer_(observer),
       endpoint_(net->CreateEndpoint(EmulatedEndpointConfig())),
@@ -166,6 +167,7 @@ void ScenarioIceConnectionImpl::SetRemoteSdp(SdpType type,
                                              const std::string& remote_sdp) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   remote_description_ = webrtc::CreateSessionDescription(type, remote_sdp);
+  // 收到ice的结果
   jsep_controller_->SubscribeIceCandidateGathered(
       [this](const std::string& transport,
              const std::vector<cricket::Candidate>& candidate) {
@@ -236,6 +238,7 @@ void ScenarioIceConnectionImpl::OnCandidates(
     const std::string& mid,
     const std::vector<cricket::Candidate>& candidates) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
+  // 通知ice
   observer_->OnIceCandidates(mid, candidates);
 }
 

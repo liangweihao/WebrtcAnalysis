@@ -276,7 +276,7 @@ bool IPFromAddrInfo(struct addrinfo* info, IPAddress* out) {
   }
   return false;
 }
-
+//通过 域名 得到 IP地址
 bool IPFromString(absl::string_view str, IPAddress* out) {
   if (!out) {
     return false;

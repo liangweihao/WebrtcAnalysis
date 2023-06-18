@@ -49,7 +49,7 @@ StunRequestManager::StunRequestManager(
     : thread_(thread), send_packet_(std::move(send_packet)) {}
 
 StunRequestManager::~StunRequestManager() = default;
-
+// 发送stun请求
 void StunRequestManager::Send(StunRequest* request) {
   SendDelayed(request, 0);
 }
@@ -60,6 +60,7 @@ void StunRequestManager::SendDelayed(StunRequest* request, int delay) {
   auto [iter, was_inserted] =
       requests_.emplace(request->id(), absl::WrapUnique(request));
   RTC_DCHECK(was_inserted);
+  // 发送时间
   request->Send(webrtc::TimeDelta::Millis(delay));
 }
 
@@ -248,11 +249,13 @@ void StunRequest::SendInternal() {
     manager_.OnRequestTimedOut(this);
     return;
   }
-
+  // 获取时间戳
   tstamp_ = rtc::TimeMillis();
 
   rtc::ByteBufferWriter buf;
+  // 消息写入buf
   msg_->Write(&buf);
+  // 发送消息封包
   manager_.SendPacket(buf.Data(), buf.Length(), this);
 
   OnSent();
@@ -263,7 +266,7 @@ void StunRequest::SendDelayed(webrtc::TimeDelta delay) {
   network_thread()->PostDelayedTask(
       SafeTask(task_safety_.flag(), [this]() { SendInternal(); }), delay);
 }
-
+// 发送时间戳
 void StunRequest::Send(webrtc::TimeDelta delay) {
   RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK_GE(delay.ms(), 0);

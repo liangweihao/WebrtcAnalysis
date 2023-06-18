@@ -183,6 +183,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   // connection is using it.
   // PRUNED: It will be destroyed if no connection is using it for a period of
   // 30 seconds.
+  // port处于存活状态一直到被删除
   enum class State { INIT, KEEP_ALIVE_UNTIL_PRUNED, PRUNED };
   Port(webrtc::TaskQueueBase* thread,
        absl::string_view type,
@@ -222,8 +223,10 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
 
   // Should not destroy the port even if no connection is using it. Called when
   // a port is ready to use.
+  // 保持存活一直到删除之前
   void KeepAliveUntilPruned();
   // Allows a port to be destroyed if no connection is using it.
+  // 删除
   void Prune();
 
   // Call to stop any currently pending operations from running.
@@ -275,6 +278,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
 
   // SignalPortComplete is sent when port completes the task of candidates
   // allocation.
+  // 信号端口完成的回调
   sigslot::signal1<Port*> SignalPortComplete;
   // This signal sent when port fails to allocate candidates and this port
   // can't be used in establishing the connections. When port is in shared mode

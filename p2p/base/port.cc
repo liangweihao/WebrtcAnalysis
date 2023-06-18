@@ -243,14 +243,17 @@ const std::vector<Candidate>& Port::Candidates() const {
 }
 
 Connection* Port::GetConnection(const rtc::SocketAddress& remote_addr) {
+  // 查找远程主机的 连接器
   AddressMap::const_iterator iter = connections_.find(remote_addr);
   if (iter != connections_.end())
     return iter->second;
   else
     return NULL;
 }
-
-void Port::AddAddress(const rtc::SocketAddress& address,
+//  创建网络地址协议 以及广播SignalCandidateReady
+void Port::AddAddress(
+  //公网地址
+  const rtc::SocketAddress& address,
                       const rtc::SocketAddress& base_address,
                       const rtc::SocketAddress& related_address,
                       absl::string_view protocol,
@@ -268,6 +271,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
 
   std::string foundation =
       ComputeFoundation(type, protocol, relay_protocol, base_address);
+      // 创建网络地址的协议
   Candidate c(component_, protocol, address, 0U, username_fragment(), password_,
               type, generation_, foundation, network_->id(), network_cost_);
   c.set_priority(
@@ -283,6 +287,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
   bool pending = MaybeObfuscateAddress(&c, type, is_final);
 
   if (!pending) {
+    // 通知网络协议地址添加完成 SignalCandidateReady
     FinishAddingAddress(c, is_final);
   }
 }
@@ -324,11 +329,13 @@ bool Port::MaybeObfuscateAddress(Candidate* c,
                                                      callback);
   return true;
 }
-
+// 通知FinishAddingAddress 以及添加candidates_的集合
 void Port::FinishAddingAddress(const Candidate& c, bool is_final) {
+  // 网络地址添加到集合中
   candidates_.push_back(c);
+  // 通知协议准备完成
   SignalCandidateReady(this, c);
-
+// 通知端口处理完成
   PostAddAddress(is_final);
 }
 
@@ -588,7 +595,7 @@ bool Port::GetStunMessage(const char* data,
   *out_msg = std::move(stun_msg);
   return true;
 }
-
+// 判断传入的网络地址是否兼容当前端口的网络配置。
 bool Port::IsCompatibleAddress(const rtc::SocketAddress& addr) {
   // Get a representative IP for the Network this port is configured to use.
   rtc::IPAddress ip = network_->GetBestIP();
@@ -824,6 +831,7 @@ void Port::KeepAliveUntilPruned() {
 }
 
 void Port::Prune() {
+  // 中断
   state_ = State::PRUNED;
   PostDestroyIfDead(/*delayed=*/false);
 }
@@ -839,6 +847,7 @@ void Port::PostDestroyIfDead(bool delayed) {
   rtc::WeakPtr<Port> weak_ptr = NewWeakPtr();
   auto task = [weak_ptr = std::move(weak_ptr)] {
     if (weak_ptr) {
+      // 删除
       weak_ptr->DestroyIfDead();
     }
   };
@@ -865,7 +874,7 @@ void Port::SubscribePortDestroyed(
     std::function<void(PortInterface*)> callback) {
   port_destroyed_callback_list_.AddReceiver(callback);
 }
-
+// 发送端口销毁
 void Port::SendPortDestroyed(Port* port) {
   port_destroyed_callback_list_.Send(port);
 }

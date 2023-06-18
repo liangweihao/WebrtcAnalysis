@@ -74,7 +74,7 @@ class PacketTransportInternal;
 }  // namespace rtc
 
 namespace webrtc {
-
+// 负责管理和控制媒体传输的网络连接
 class JsepTransportController : public sigslot::has_slots<> {
  public:
   // Used when the RtpTransport/DtlsTransport of the m= section is changed
@@ -108,6 +108,7 @@ class JsepTransportController : public sigslot::has_slots<> {
     // If `redetermine_role_on_ice_restart` is true, ICE role is redetermined
     // upon setting a local transport description that indicates an ICE
     // restart.
+    // 当ICE（Interactive Connectivity Establishment）重新启动时，ICE代理会重新评估角色分配，以确定在重新启动后谁将担任控制角色和控制路径。
     bool redetermine_role_on_ice_restart = true;
     rtc::SSLProtocolVersion ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
     // `crypto_options` is used to determine if created DTLS transports
@@ -213,6 +214,7 @@ class JsepTransportController : public sigslot::has_slots<> {
   // Can only be called once.
   bool SetLocalCertificate(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
+
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate(
       const std::string& mid) const;
   // Caller owns returned certificate chain. This method mainly exists for
@@ -234,6 +236,7 @@ class JsepTransportController : public sigslot::has_slots<> {
   RTCError RollbackTransports();
 
   // F: void(const std::string&, const std::vector<cricket::Candidate>&)
+//   注册ice完成接收器
   template <typename F>
   void SubscribeIceCandidateGathered(F&& callback) {
     RTC_DCHECK_RUN_ON(network_thread_);
@@ -312,6 +315,7 @@ class JsepTransportController : public sigslot::has_slots<> {
   CallbackList<cricket::IceGatheringState> signal_ice_gathering_state_
       RTC_GUARDED_BY(network_thread_);
 
+//回调
   // [mid, candidates]
   CallbackList<const std::string&, const std::vector<cricket::Candidate>&>
       signal_ice_candidates_gathered_ RTC_GUARDED_BY(network_thread_);
@@ -469,13 +473,14 @@ class JsepTransportController : public sigslot::has_slots<> {
   // Aggregate states for Transports.
   // standardized_ice_connection_state_ is intended to replace
   // ice_connection_state, see bugs.webrtc.org/9308
-  cricket::IceConnectionState ice_connection_state_ =
-      cricket::kIceConnectionConnecting;
+  cricket::IceConnectionState ice_connection_state_ =  cricket::kIceConnectionConnecting;
+
   PeerConnectionInterface::IceConnectionState
-      standardized_ice_connection_state_ =
-          PeerConnectionInterface::kIceConnectionNew;
+      standardized_ice_connection_state_ = PeerConnectionInterface::kIceConnectionNew;
+
   PeerConnectionInterface::PeerConnectionState combined_connection_state_ =
       PeerConnectionInterface::PeerConnectionState::kNew;
+
   cricket::IceGatheringState ice_gathering_state_ = cricket::kIceGatheringNew;
 
   const Config config_;

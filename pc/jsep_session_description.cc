@@ -116,6 +116,7 @@ void UpdateConnectionAddress(
     // `media_desc->connection_address()`.
     connection_addr = rtc::SocketAddress(kDummyAddress, kDummyPort);
   }
+  // 媒体内容描述添加连接地址
   media_desc->set_connection_address(connection_addr);
 }
 
@@ -234,7 +235,7 @@ std::unique_ptr<SessionDescriptionInterface> JsepSessionDescription::Clone()
   }
   return new_description;
 }
-
+// jsep添加描述
 bool JsepSessionDescription::AddCandidate(
     const IceCandidateInterface* candidate) {
   if (!candidate)
@@ -269,6 +270,7 @@ bool JsepSessionDescription::AddCandidate(
           updated_candidate_wrapper.get())) {
     candidate_collection_[mediasection_index].add(
         updated_candidate_wrapper.release());
+        // 更新连接的地址
     UpdateConnectionAddress(
         candidate_collection_[mediasection_index],
         description_->contents()[mediasection_index].media_description());

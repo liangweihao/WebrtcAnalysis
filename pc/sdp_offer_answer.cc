@@ -1559,6 +1559,7 @@ void SdpOfferAnswerHandler::SetLocalDescription(
           operations_chain_callback();
           return;
         }
+        // 开始设置本地描述
         this_weak_ptr->DoSetLocalDescription(std::move(desc), observer);
         // DoSetLocalDescription() is implemented as a synchronous operation.
         // The `observer` will already have been informed that it completed, and
@@ -1630,7 +1631,7 @@ void SdpOfferAnswerHandler::SetLocalDescription(
         }
       });
 }
-
+// 应用本地描述
 RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
     std::unique_ptr<SessionDescriptionInterface> desc,
     const std::map<std::string, const cricket::ContentGroup*>&
@@ -1653,6 +1654,7 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
       local_description();
   std::unique_ptr<SessionDescriptionInterface> replaced_local_description;
   SdpType type = desc->GetType();
+  // 记录本地的描述符
   if (type == SdpType::kAnswer) {
     replaced_local_description = pending_local_description_
                                      ? std::move(pending_local_description_)
@@ -2272,7 +2274,7 @@ void SdpOfferAnswerHandler::PlanBUpdateSendersAndReceivers(
 
   UpdateEndedRemoteMediaStreams();
 }
-
+// 开始设置本地描述
 void SdpOfferAnswerHandler::DoSetLocalDescription(
     std::unique_ptr<SessionDescriptionInterface> desc,
     rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer) {
@@ -2376,6 +2378,7 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
   // MaybeStartGathering needs to be called after informing the observer so that
   // we don't signal any candidates before signaling that SetLocalDescription
   // completed.
+  // 开始收集
   transport_controller_s()->MaybeStartGathering();
 }
 
@@ -2773,6 +2776,7 @@ void SdpOfferAnswerHandler::AddLocalIceCandidate(
     const JsepIceCandidate* candidate) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   if (local_description()) {
+    // 更新jsep  将网络的地址设置给之前保存的本地描述中
     mutable_local_description()->AddCandidate(candidate);
   }
 }
@@ -5094,7 +5098,7 @@ RTCErrorOr<const cricket::ContentInfo*> SdpOfferAnswerHandler::FindContentInfo(
   return RTCError(RTCErrorType::INVALID_PARAMETER,
                   "Neither sdp_mline_index nor sdp_mid specified.");
 }
-
+//创建通道处理器
 RTCError SdpOfferAnswerHandler::CreateChannels(const SessionDescription& desc) {
   TRACE_EVENT0("webrtc", "SdpOfferAnswerHandler::CreateChannels");
   // Creating the media channels. Transports should already have been created
@@ -5117,6 +5121,7 @@ RTCError SdpOfferAnswerHandler::CreateChannels(const SessionDescription& desc) {
     }
   }
 
+// 创建视频的内容
   const cricket::ContentInfo* video = cricket::GetFirstVideoContent(&desc);
   if (video && !video->rejected &&
       !rtp_manager()->GetVideoTransceiver()->internal()->channel()) {
@@ -5134,7 +5139,7 @@ RTCError SdpOfferAnswerHandler::CreateChannels(const SessionDescription& desc) {
       return error;
     }
   }
-
+// 数据描述
   const cricket::ContentInfo* data = cricket::GetFirstDataContent(&desc);
   if (data && !data->rejected && !CreateDataChannel(data->name)) {
     return RTCError(RTCErrorType::INTERNAL_ERROR,

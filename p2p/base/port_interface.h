@@ -89,6 +89,7 @@ class PortInterface {
 
   // Sends the given packet to the given address, provided that the address is
   // that of a connection or an address that has sent to us already.
+  // 发送数据
   virtual int SendTo(const void* data,
                      size_t size,
                      const rtc::SocketAddress& addr,
@@ -108,6 +109,7 @@ class PortInterface {
 
   // Sends a response message (normal or error) to the given request.  One of
   // these methods should be called as a response to SignalUnknownAddress.
+  // 发送绑定失败
   virtual void SendBindingErrorResponse(StunMessage* message,
                                         const rtc::SocketAddress& addr,
                                         int error_code,
@@ -115,6 +117,7 @@ class PortInterface {
 
   // Signaled when this port decides to delete itself because it no longer has
   // any usefulness.
+  // 订阅端口销毁 
   virtual void SubscribePortDestroyed(
       std::function<void(PortInterface*)> callback) = 0;
 
@@ -125,6 +128,7 @@ class PortInterface {
   // unknown address).  Calling this method turns off delivery of packets
   // through their respective connection and instead delivers every packet
   // through this port.
+  // 是否允许包
   virtual void EnablePortPackets() = 0;
   sigslot::
       signal4<PortInterface*, const char*, size_t, const rtc::SocketAddress&>

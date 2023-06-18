@@ -39,6 +39,7 @@ namespace webrtc {
 
 JsepTransportController::JsepTransportController(
     rtc::Thread* network_thread,
+    // 来自pc创建的端口分配器
     cricket::PortAllocator* port_allocator,
     AsyncDnsResolverFactoryInterface* async_dns_resolver_factory,
     Config config)
@@ -167,7 +168,7 @@ rtc::scoped_refptr<SctpTransport> JsepTransportController::GetSctpTransport(
   }
   return jsep_transport->SctpTransport();
 }
-
+// 设置ice的配置
 void JsepTransportController::SetIceConfig(const cricket::IceConfig& config) {
   RTC_DCHECK_RUN_ON(network_thread_);
   ice_config_ = config;
@@ -387,7 +388,7 @@ RTCError JsepTransportController::RollbackTransports() {
   }
   return RTCError::OK();
 }
-
+// 创建ice传输控制器
 rtc::scoped_refptr<webrtc::IceTransportInterface>
 JsepTransportController::CreateIceTransport(const std::string& transport_name,
                                             bool rtcp) {
@@ -395,6 +396,7 @@ JsepTransportController::CreateIceTransport(const std::string& transport_name,
                        : cricket::ICE_CANDIDATE_COMPONENT_RTP;
 
   IceTransportInit init;
+  // ice传输初始化  设置端口分配器
   init.set_port_allocator(port_allocator_);
   init.set_async_dns_resolver_factory(async_dns_resolver_factory_);
   init.set_event_log(config_.event_log);
@@ -438,8 +440,10 @@ JsepTransportController::CreateDtlsTransport(
       this, &JsepTransportController::OnTransportWritableState_n);
   dtls->SignalReceivingState.connect(
       this, &JsepTransportController::OnTransportReceivingState_n);
+      // 来自p2p传输通道的状态
   dtls->ice_transport()->SignalGatheringState.connect(
       this, &JsepTransportController::OnTransportGatheringState_n);
+      // 收到网络地址以后 开始处理
   dtls->ice_transport()->SignalCandidateGathered.connect(
       this, &JsepTransportController::OnTransportCandidateGathered_n);
   dtls->ice_transport()->SignalCandidateError.connect(
@@ -1095,6 +1099,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
             UpdateAggregateStates_n();
           });
 
+// rtcp包接受器
   jsep_transport->rtp_transport()->SignalRtcpPacketReceived.connect(
       this, &JsepTransportController::OnRtcpPacketReceived_n);
   jsep_transport->rtp_transport()->SignalUnDemuxableRtpPacketReceived.connect(
@@ -1182,7 +1187,7 @@ void JsepTransportController::OnTransportGatheringState_n(
     cricket::IceTransportInternal* transport) {
   UpdateAggregateStates_n();
 }
-
+// 处理网络地址
 void JsepTransportController::OnTransportCandidateGathered_n(
     cricket::IceTransportInternal* transport,
     const cricket::Candidate& candidate) {
@@ -1191,7 +1196,7 @@ void JsepTransportController::OnTransportCandidateGathered_n(
     RTC_DCHECK_NOTREACHED();
     return;
   }
-
+//ICE收到以后 将传输控制器的内容 发送给PC 连接器
   signal_ice_candidates_gathered_.Send(
       transport->transport_name(), std::vector<cricket::Candidate>{candidate});
 }
@@ -1234,7 +1239,7 @@ void JsepTransportController::OnTransportStateChanged_n(
                    << " state changed. Check if state is complete.";
   UpdateAggregateStates_n();
 }
-
+// 更新
 void JsepTransportController::UpdateAggregateStates_n() {
   TRACE_EVENT0("webrtc", "JsepTransportController::UpdateAggregateStates_n");
   auto dtls_transports = GetActiveDtlsTransports();
@@ -1334,7 +1339,7 @@ void JsepTransportController::UpdateAggregateStates_n() {
   } else {
     RTC_DCHECK_NOTREACHED();
   }
-
+// ice状态发生变化的时候 通知一下
   if (standardized_ice_connection_state_ != new_ice_connection_state) {
     if (standardized_ice_connection_state_ ==
             PeerConnectionInterface::kIceConnectionChecking &&
@@ -1395,6 +1400,7 @@ void JsepTransportController::UpdateAggregateStates_n() {
 
   if (combined_connection_state_ != new_combined_state) {
     combined_connection_state_ = new_combined_state;
+    // 连接状态
     signal_connection_state_.Send(new_combined_state);
   }
 
@@ -1408,6 +1414,7 @@ void JsepTransportController::UpdateAggregateStates_n() {
   }
   if (ice_gathering_state_ != new_gathering_state) {
     ice_gathering_state_ = new_gathering_state;
+    // ice收集状态
     signal_ice_gathering_state_.Send(new_gathering_state);
   }
 }

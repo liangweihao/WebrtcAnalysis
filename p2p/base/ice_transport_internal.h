@@ -105,6 +105,7 @@ webrtc::RTCError VerifyCandidates(const Candidates& candidates);
 // -1.
 struct IceConfig {
   // The ICE connection receiving timeout value in milliseconds.
+  // 通常是5s 候选者连接超时时间 
   absl::optional<int> receiving_timeout;
   // Time interval in milliseconds to ping a backup connection when the ICE
   // channel is strongly connected.
@@ -118,6 +119,7 @@ struct IceConfig {
 
   // Whether we should prioritize Relay/Relay candidate when nothing
   // is writable yet.
+  // C 会优先考虑本地和远程候选者之间最有可能建立连接的候选者对，这样可以更快地建立连接。
   bool prioritize_most_likely_candidate_pairs = false;
 
   // Writable connections are pinged at a slower rate once stablized.

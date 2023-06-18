@@ -19,7 +19,7 @@
 namespace cricket {
 
 TurnPortFactory::~TurnPortFactory() {}
-
+//  TURN port 工具类
 std::unique_ptr<Port> TurnPortFactory::Create(
     const CreateRelayPortArgs& args,
     rtc::AsyncPacketSocket* udp_socket) {

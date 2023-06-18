@@ -297,6 +297,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
   // Policy on how to prune turn ports, taken from the port allocator.
   webrtc::PortPrunePolicy turn_port_prune_policy_;
   SessionState state_ = SessionState::CLEARED;
+  // allocation_epoch_ 就是这个分配周期的时间间隔，以毫秒为单位。默认情况下，allocation_epoch_ 的值为 500 毫秒。
   int allocation_epoch_ RTC_GUARDED_BY(network_thread_) = 0;
   webrtc::ScopedTaskSafety network_safety_;
 

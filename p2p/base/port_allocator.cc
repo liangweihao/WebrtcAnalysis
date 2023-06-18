@@ -133,7 +133,7 @@ bool PortAllocator::SetConfiguration(
                           turn_port_prune_policy, turn_customizer,
                           stun_candidate_keepalive_interval);
 }
-
+// 端口分配器开始配置
 bool PortAllocator::SetConfiguration(
     const ServerAddresses& stun_servers,
     const std::vector<RelayServerConfig>& turn_servers,
@@ -148,6 +148,7 @@ bool PortAllocator::SetConfiguration(
   RTC_DCHECK(candidate_pool_size == 0 || thread_checker_.IsCurrent());
   bool ice_servers_changed =
       (stun_servers != stun_servers_ || turn_servers != turn_servers_);
+      // 保存stun turn
   stun_servers_ = stun_servers;
   turn_servers_ = turn_servers;
   turn_port_prune_policy_ = turn_port_prune_policy;
@@ -193,16 +194,20 @@ bool PortAllocator::SetConfiguration(
         stun_candidate_keepalive_interval_);
   }
 
+// 创建了一个网络连接池
   // If `candidate_pool_size_` is greater than the number of pooled sessions,
   // create new sessions.
   while (static_cast<int>(pooled_sessions_.size()) < candidate_pool_size_) {
     IceParameters iceCredentials =
         IceCredentialsIterator::CreateRandomIceCredentials();
+        // 创建一个端口分配器会话
     PortAllocatorSession* pooled_session =
         CreateSessionInternal("", 0, iceCredentials.ufrag, iceCredentials.pwd);
     pooled_session->set_pooled(true);
     pooled_session->set_ice_tiebreaker(tiebreaker_);
+    // 这里就开始获取stun turn的端口信息了
     pooled_session->StartGettingPorts();
+    // 添加到会话池里面
     pooled_sessions_.push_back(
         std::unique_ptr<PortAllocatorSession>(pooled_session));
   }
@@ -215,7 +220,7 @@ void PortAllocator::SetIceTiebreaker(uint64_t tiebreaker) {
     pooled_session->set_ice_tiebreaker(tiebreaker_);
   }
 }
-
+// 创建端口分配器会话
 std::unique_ptr<PortAllocatorSession> PortAllocator::CreateSession(
     absl::string_view content_name,
     int component,

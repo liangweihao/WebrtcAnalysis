@@ -954,7 +954,7 @@ bool BasicNetworkManager::IsIgnoredNetwork(const Network& network) const {
 
   return false;
 }
-
+// 开始升级
 void BasicNetworkManager::StartUpdating() {
   thread_ = Thread::Current();
   // Redundant but necessary for thread annotations.
@@ -993,7 +993,7 @@ void BasicNetworkManager::StopUpdating() {
     StopNetworkMonitor();
   }
 }
-
+// 开始网络监听
 void BasicNetworkManager::StartNetworkMonitor() {
   if (network_monitor_factory_ == nullptr) {
     return;
@@ -1004,10 +1004,12 @@ void BasicNetworkManager::StartNetworkMonitor() {
     if (!network_monitor_) {
       return;
     }
+    // 网络变化
     network_monitor_->SetNetworksChangedCallback(
         [this]() { OnNetworksChanged(); });
   }
 
+// 网络绑定器
   if (network_monitor_->SupportsBindSocketToNetwork()) {
     // Set NetworkBinder on SocketServer so that
     // PhysicalSocket::Bind will call

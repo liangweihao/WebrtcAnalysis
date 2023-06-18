@@ -445,7 +445,7 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
     const JavaParamRef<jobject>& j_sslCertificateVerifier) {
   std::unique_ptr<PeerConnectionObserver> observer(
       reinterpret_cast<PeerConnectionObserver*>(observer_p));
-
+  // 从java层C++的配置
   PeerConnectionInterface::RTCConfiguration rtc_config(
       PeerConnectionInterface::RTCConfigurationType::kAggressive);
   JavaToNativeRTCConfiguration(jni, j_rtc_config, &rtc_config);

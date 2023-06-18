@@ -181,9 +181,10 @@ struct RTC_EXPORT RelayServerConfig {
   std::vector<std::string> tls_alpn_protocols;
   std::vector<std::string> tls_elliptic_curves;
   rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr;
+  // 标识stun的id
   std::string turn_logging_id;
 };
-
+// 端口分配会话 
 class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
  public:
   // Content name passed in mostly for logging and debugging.
@@ -651,6 +652,7 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
   webrtc::VpnPreference vpn_preference_ = webrtc::VpnPreference::kDefault;
 
  private:
+//  stun 和 turn服务器
   ServerAddresses stun_servers_;
   std::vector<RelayServerConfig> turn_servers_;
   int candidate_pool_size_ = 0;  // Last value passed into SetConfiguration.

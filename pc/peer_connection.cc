@@ -482,6 +482,7 @@ RTCErrorOr<rtc::scoped_refptr<PeerConnection>> PeerConnection::Create(
             std::make_unique<BasicAsyncResolverFactory>());
   }
 
+// 创建PC
   // The PeerConnection constructor consumes some, but not all, dependencies.
   auto pc = rtc::make_ref_counted<PeerConnection>(
       context, options, is_unified_plan, std::move(event_log), std::move(call),
@@ -601,15 +602,18 @@ RTCError PeerConnection::Initialize(
   RTC_DCHECK_RUN_ON(signaling_thread());
   TRACE_EVENT0("webrtc", "PeerConnection::Initialize");
 
+// 存储配置的服务器地址
   cricket::ServerAddresses stun_servers;
   std::vector<cricket::RelayServerConfig> turn_servers;
 
+// 解析ice服务器的地址
   RTCError parse_error = ParseIceServersOrError(configuration.servers,
                                                 &stun_servers, &turn_servers);
   if (!parse_error.ok()) {
     return parse_error;
   }
 
+// trun上限
   // Restrict number of TURN servers.
   if (turn_servers.size() > cricket::kMaxTurnServers) {
     RTC_LOG(LS_WARNING) << "Number of configured TURN servers is "
@@ -621,6 +625,7 @@ RTCError PeerConnection::Initialize(
 
   // Add the turn logging id to all turn servers
   for (cricket::RelayServerConfig& turn_server : turn_servers) {
+    // 配置turn日志id 解决防火墙中 turn中的问题的排查
     turn_server.turn_logging_id = configuration.turn_logging_id;
   }
 
@@ -636,6 +641,7 @@ RTCError PeerConnection::Initialize(
   transport_controller_copy_ = network_thread()->BlockingCall([&] {
     RTC_DCHECK_RUN_ON(network_thread());
     network_thread_safety_ = PendingTaskSafetyFlag::Create();
+    // 主要是配置端口分配器
     InitializePortAllocatorResult pa_result =
         InitializePortAllocator_n(stun_servers, turn_servers, configuration);
     // Send information about IPv4/IPv6 status.
@@ -643,6 +649,7 @@ RTCError PeerConnection::Initialize(
         pa_result.enable_ipv6 ? kPeerConnection_IPv6 : kPeerConnection_IPv4;
     RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.IPMetrics", address_family,
                               kPeerConnectionAddressFamilyCounter_Max);
+                              // 初始化传输控制器
     return InitializeTransportController_n(configuration, dependencies);
   });
 
@@ -651,6 +658,7 @@ RTCError PeerConnection::Initialize(
   legacy_stats_ = std::make_unique<LegacyStatsCollector>(this);
   stats_collector_ = RTCStatsCollector::Create(this);
 
+// sdp 收发处理器
   sdp_handler_ = SdpOfferAnswerHandler::Create(this, configuration,
                                                dependencies, context_.get());
 
@@ -662,6 +670,7 @@ RTCError PeerConnection::Initialize(
         sdp_handler_->UpdateNegotiationNeeded();
       });
 
+// 非统一传输方案 需要添加注册接收器
   // Add default audio/video transceivers for Plan B SDP.
   if (!IsUnifiedPlan()) {
     rtp_manager()->transceivers()->Add(
@@ -748,6 +757,7 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
               SetConnectionState(s);
             }));
       });
+      // ice连接状态
   transport_controller_->SubscribeStandardizedIceConnectionState(
       [this](PeerConnectionInterface::IceConnectionState s) {
         RTC_DCHECK_RUN_ON(network_thread());
@@ -766,6 +776,7 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
               OnTransportControllerGatheringState(s);
             }));
       });
+      // PC层数收到网络协议 
   transport_controller_->SubscribeIceCandidateGathered(
       [this](const std::string& transport,
              const std::vector<cricket::Candidate>& candidates) {
@@ -774,6 +785,7 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
             SafeTask(signaling_thread_safety_.flag(),
                      [this, t = transport, c = candidates]() {
                        RTC_DCHECK_RUN_ON(signaling_thread());
+                      //  收到网络地址以后
                        OnTransportControllerCandidatesGathered(t, c);
                      }));
       });
@@ -1573,6 +1585,7 @@ RTCError PeerConnection::SetConfiguration(
   // Parse ICE servers before hopping to network thread.
   cricket::ServerAddresses stun_servers;
   std::vector<cricket::RelayServerConfig> turn_servers;
+  // 更新配置的时候也要重置一下  
   RTCError parse_error = ParseIceServersOrError(configuration.servers,
                                                 &stun_servers, &turn_servers);
   if (!parse_error.ok()) {
@@ -1975,7 +1988,7 @@ void PeerConnection::SetStandardizedIceConnectionState(
 
   RTC_LOG(LS_INFO) << "Changing standardized IceConnectionState "
                    << standardized_ice_connection_state_ << " => " << new_state;
-
+  // 通知ice连接的状态
   standardized_ice_connection_state_ = new_state;
   Observer()->OnStandardizedIceConnectionChange(new_state);
 }
@@ -2067,7 +2080,7 @@ void PeerConnection::OnIceGatheringChange(
   ice_gathering_state_ = new_state;
   Observer()->OnIceGatheringChange(ice_gathering_state_);
 }
-
+// 通知网络协议已经完成 
 void PeerConnection::OnIceCandidate(
     std::unique_ptr<IceCandidateInterface> candidate) {
   if (IsClosed()) {
@@ -2146,6 +2159,7 @@ PeerConnection::InitializePortAllocator_n(
     const RTCConfiguration& configuration) {
   RTC_DCHECK_RUN_ON(network_thread());
 
+// 初始化一下端口分配器诶
   port_allocator_->Initialize();
   // To handle both internal and externally created port allocator, we will
   // enable BUNDLE here.
@@ -2156,16 +2170,18 @@ PeerConnection::InitializePortAllocator_n(
   if (trials().IsDisabled("WebRTC-IPv6Default")) {
     port_allocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
   }
+  // wifi下是否启用ipv6
   if (configuration.disable_ipv6_on_wifi) {
     port_allocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI);
     RTC_LOG(LS_INFO) << "IPv6 candidates on Wi-Fi are disabled.";
   }
 
+// TCP候选策略 为了解决UDP不能连接的情况
   if (configuration.tcp_candidate_policy == kTcpCandidatePolicyDisabled) {
     port_allocator_flags |= cricket::PORTALLOCATOR_DISABLE_TCP;
     RTC_LOG(LS_INFO) << "TCP candidates are disabled.";
   }
-
+// 网络环境策略
   if (configuration.candidate_network_policy ==
       kCandidateNetworkPolicyLowCost) {
     port_allocator_flags |= cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS;
@@ -2177,6 +2193,7 @@ PeerConnection::InitializePortAllocator_n(
     RTC_LOG(LS_INFO) << "Disable candidates on link-local network interfaces.";
   }
 
+// 设置端口的策略
   port_allocator_->set_flags(port_allocator_flags);
   // No step delay is used while allocating ports.
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
@@ -2186,10 +2203,12 @@ PeerConnection::InitializePortAllocator_n(
 
   auto turn_servers_copy = turn_servers;
   for (auto& turn_server : turn_servers_copy) {
+    // tls证书验证器
     turn_server.tls_cert_verifier = tls_cert_verifier_.get();
   }
   // Call this last since it may create pooled allocator sessions using the
   // properties set above.
+  // 配置分歧器
   port_allocator_->SetConfiguration(
       stun_servers, std::move(turn_servers_copy),
       configuration.ice_candidate_pool_size,
@@ -2452,9 +2471,12 @@ void PeerConnection::OnTransportControllerCandidatesGathered(
   for (cricket::Candidates::const_iterator citer = candidates.begin();
        citer != candidates.end(); ++citer) {
     // Use transport_name as the candidate media id.
+    // 创建jsep
     std::unique_ptr<JsepIceCandidate> candidate(
         new JsepIceCandidate(transport_name, sdp_mline_index, *citer));
+        // 告诉sdp需要连接什么地方
     sdp_handler_->AddLocalIceCandidate(candidate.get());
+    // 发送网路协议给所有的注册监听的地方
     OnIceCandidate(std::move(candidate));
   }
 }

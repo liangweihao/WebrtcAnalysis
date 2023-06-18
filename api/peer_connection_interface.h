@@ -409,6 +409,7 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
 
     // TODO(pthatcher): Rename this ice_servers, but update Chromium
     // at the same time.
+    // 初始化 ice的服务器
     IceServers servers;
     // TODO(pthatcher): Rename this ice_transport_type, but update
     // Chromium at the same time.
@@ -430,6 +431,8 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // Only intended to be used on specific devices. Certain phones disable IPv6
     // when the screen is turned off and it would be better to just disable the
     // IPv6 ICE candidates on Wi-Fi in those cases.
+    // 用于在Wi-Fi接口上禁用IPv6协议。IPv6是下一代互联网协议，它提供了更大的地址空间和更好的安全性，但在某些情况下可能会导致网络连接问题。
+    // 通过禁用Wi-Fi接口上的IPv6协议，可以避免这些潜在的问题，从而提高网络稳定性和性能。
     bool disable_ipv6_on_wifi = false;
 
     // By default, the PeerConnection will use a limited number of IPv6 network
@@ -439,6 +442,7 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // Can be set to INT_MAX to effectively disable the limit.
     int max_ipv6_networks = cricket::kDefaultMaxIPv6Networks;
 
+// 不允许连接到本地网络
     // Exclude link-local network interfaces
     // from consideration for gathering ICE candidates.
     bool disable_link_local_networks = false;
@@ -461,6 +465,9 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // The below fields are not part of the standard.
     /////////////////////////////////////////////////
 
+// 当设置为"disabled"时，WebRTC将不会使用TCP协议作为候选传输地址。
+// 当设置为"preferred"时，WebRTC将会优先使用UDP协议，但如果UDP协议无法使用，则会尝试使用TCP协议作为备选方案。
+// 当设置为"active"时，WebRTC将会同时使用UDP和TCP协议作为候选传输地址，并且在连接建立时会优先选择TCP协议。
     // Can be used to disable TCP candidate generation.
     TcpCandidatePolicy tcp_candidate_policy = kTcpCandidatePolicyEnabled;
 
@@ -468,6 +475,9 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // if a lower cost one exists. For example, if both Wi-Fi and cellular
     // interfaces are available, this could be used to avoid using the cellular
     // interface.
+    // 当设置为"all"时，WebRTC将会尝试使用所有可用的网络类型和协议，包括WiFi、4G、Ethernet、IPv4和IPv6。这是默认的配置选项。
+// 当设置为"low_cost"时，WebRTC将会优先使用廉价的网络类型，比如4G和WiFi，并且会尽可能避免使用高成本的网络类型，比如Ethernet。
+// 当设置为"prefer_ethernet"时，WebRTC将会优先使用Ethernet网络，并且会尽可能避免使用WiFi和4G等无线网络类型。
     CandidateNetworkPolicy candidate_network_policy =
         kCandidateNetworkPolicyAll;
 
@@ -1381,6 +1391,7 @@ struct RTC_EXPORT PeerConnectionDependencies final {
   // TODO(bugs.webrtc.org/7447): remove port allocator once downstream is
   // updated. The recommended way to inject networking components is to pass a
   // PacketSocketFactory when creating the PeerConnectionFactory.
+  // 端口分配器
   std::unique_ptr<cricket::PortAllocator> allocator;
   // Factory for creating resolvers that look up hostnames in DNS
   std::unique_ptr<webrtc::AsyncDnsResolverFactoryInterface>

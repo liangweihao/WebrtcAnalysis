@@ -334,6 +334,7 @@ rtc::NetworkBindingResult AndroidNetworkMonitor::BindSocketToNetwork(
   }
 
   int rv = 0;
+  // 调用的是Android底层库的socket实现方式
   if (android_sdk_int_ >= SDK_VERSION_MARSHMALLOW) {
     // See declaration of android_setsocknetwork() here:
     // http://androidxref.com/6.0.0_r1/xref/development/ndk/platforms/android-M/include/android/multinetwork.h#65
@@ -638,7 +639,7 @@ AndroidNetworkMonitorFactory::AndroidNetworkMonitorFactory(
     : j_application_context_(env, j_application_context) {}
 
 AndroidNetworkMonitorFactory::~AndroidNetworkMonitorFactory() = default;
-
+// 创建网络监听
 rtc::NetworkMonitorInterface*
 AndroidNetworkMonitorFactory::CreateNetworkMonitor(
     const FieldTrialsView& field_trials) {

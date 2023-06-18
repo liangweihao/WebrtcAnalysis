@@ -78,6 +78,7 @@ class TestUDPPort : public UDPPort {
 // not disabled.
 class FakePortAllocatorSession : public PortAllocatorSession {
  public:
+// 也就是绘画场景分配器的时候 已经可以初始化了stun 和 trun
   FakePortAllocatorSession(PortAllocator* allocator,
                            rtc::Thread* network_thread,
                            rtc::PacketSocketFactory* factory,
@@ -103,6 +104,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
                       64),
         port_(),
         port_config_count_(0),
+        // 通过端口分配器初始化 stun 和 turn
         stun_servers_(allocator->stun_servers()),
         turn_servers_(allocator->turn_servers()),
         field_trials_(field_trials) {
@@ -126,6 +128,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
                                       field_trials_));
       RTC_DCHECK(port_);
       port_->SetIceTiebreaker(ice_tiebreaker());
+      // 订阅端口销毁 
       port_->SubscribePortDestroyed(
           [this](PortInterface* port) { OnPortDestroyed(port); });
       AddPort(port_.get());
@@ -174,6 +177,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   }
 
  private:
+//  添加端口 
   void AddPort(cricket::Port* port) {
     port->set_component(component());
     port->set_generation(generation());
@@ -185,6 +189,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
     port->KeepAliveUntilPruned();
   }
   void OnPortComplete(cricket::Port* port) {
+    //端口处理完毕以后 就会加入到网络协议中
     const std::vector<Candidate>& candidates = port->Candidates();
     candidates_.insert(candidates_.end(), candidates.begin(), candidates.end());
     SignalCandidatesReady(this, candidates);
@@ -207,6 +212,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   std::vector<PortInterface*> ready_ports_;
   bool allocation_done_ = false;
   bool is_cleared = false;
+  // 外部端口分配会将其 服务集合传输到当前的字段中
   ServerAddresses stun_servers_;
   std::vector<RelayServerConfig> turn_servers_;
   uint32_t candidate_filter_ = CF_ALL;

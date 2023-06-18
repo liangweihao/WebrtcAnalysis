@@ -17,6 +17,7 @@ namespace webrtc {
 
 class PeerConnectionObserver;
 
+// 用户事件
 // A bit in the usage pattern is registered when its defining event occurs
 // at least once.
 enum class UsageEvent : int {

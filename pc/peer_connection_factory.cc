@@ -78,6 +78,7 @@ CreateModularPeerConnectionFactory(
 // Static
 rtc::scoped_refptr<PeerConnectionFactory> PeerConnectionFactory::Create(
     PeerConnectionFactoryDependencies dependencies) {
+      // 创建连接上下文
   auto context = ConnectionContext::Create(&dependencies);
   if (!context) {
     return nullptr;
@@ -214,6 +215,7 @@ PeerConnectionFactory::CreatePeerConnectionOrError(
   if (!dependencies.allocator) {
     const FieldTrialsView* trials =
         dependencies.trials ? dependencies.trials.get() : &field_trials();
+        // 创建端口分配器
     dependencies.allocator = std::make_unique<cricket::BasicPortAllocator>(
         context_->default_network_manager(), context_->default_socket_factory(),
         configuration.turn_customizer, /*relay_port_factory=*/nullptr, trials);
@@ -247,6 +249,7 @@ PeerConnectionFactory::CreatePeerConnectionOrError(
         return CreateCall_w(event_log.get(), *trials, configuration);
       });
 
+// 创建peer
   auto result = PeerConnection::Create(context_, options_, std::move(event_log),
                                        std::move(call), configuration,
                                        std::move(dependencies));

@@ -194,26 +194,45 @@ class RTC_EXPORT Candidate {
   // and then we don't need this workaround.
   static void Assign(std::string& s, absl::string_view view);
   std::string ToStringInternal(bool sensitive) const;
-
+// 候选地址的唯一标识符。
   std::string id_;
+  // 候选地址的组件标识符，用于指示该地址是用于数据通道还是控制通道。
   int component_;
+  // 候选地址的传输协议，如UDP或TCP。
   std::string protocol_;
+  // 中继服务器使用的传输协议。
   std::string relay_protocol_;
+  // 候选地址的IP地址和端口号。
   rtc::SocketAddress address_;
+  //  候选地址的优先级，用于确定建立连接时使用哪个地址。
   uint32_t priority_;
+  // 用于身份验证的用户名。
   std::string username_;
+  // 用于身份验证的密码。
   std::string password_;
+  // 候选地址的类型，如host、srflx（server reflexive）、prflx（peer reflexive）或relay。
   std::string type_;
+  //  候选地址所在的网络的名称。
   std::string network_name_;
+  // 候选地址所在的网络的类型，如WIFI、以太网、蜂窝网络等。
   rtc::AdapterType network_type_;
+  // 如果候选地址是VPN网络的地址，则为底层网络类型。
   rtc::AdapterType underlying_type_for_vpn_;
+  // 候选地址的世代标识符，用于区分不同的地址。
   uint32_t generation_;
+  // 用于计算候选地址的优先级。
   std::string foundation_;
+  // 关联地址，如RTCP地址。
   rtc::SocketAddress related_address_;
+  // 如果使用TCP传输，则指定类型，如active或passive。
   std::string tcptype_;
+  // : 传输通道的名称。
   std::string transport_name_;
+  // 网络的ID。
   uint16_t network_id_;
+  // 网络的成本。
   uint16_t network_cost_;
+  // 候选地址的URL。
   std::string url_;
 };
 

@@ -46,6 +46,7 @@ using ::webrtc::SafeTask;
 using ::webrtc::TimeDelta;
 
 const int PHASE_UDP = 0;
+// "PHASE_RELAY"可能指的是ICE（Interactive Connectivity Establishment）协议中的"TURN"服务器。
 const int PHASE_RELAY = 1;
 const int PHASE_TCP = 2;
 
@@ -222,7 +223,7 @@ BasicPortAllocator::BasicPortAllocator(
   SetConfiguration(stun_servers, std::vector<RelayServerConfig>(), 0,
                    webrtc::NO_PRUNE, nullptr);
 }
-
+// webrtc 收集结果
 void BasicPortAllocator::OnIceRegathering(PortAllocatorSession* session,
                                           IceRegatheringReason reason) {
   // If the session has not been taken by an active channel, do not report the
@@ -268,21 +269,26 @@ int BasicPortAllocator::GetNetworkIgnoreMask() const {
   }
   return mask;
 }
-
+// 确定可用的网络接口和端口范围。
+// 分配和释放网络端口。
+// 处理端口冲突和资源竞争。
+// 创建端口分配会话器
 PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
     absl::string_view content_name,
     int component,
     absl::string_view ice_ufrag,
     absl::string_view ice_pwd) {
   CheckRunOnValidThreadAndInitialized();
+  //创建端口会话场景 - 此时会开启网络监听
   PortAllocatorSession* session = new BasicPortAllocatorSession(
       this, std::string(content_name), component, std::string(ice_ufrag),
       std::string(ice_pwd));
+      // 会话收集连接状态
   session->SignalIceRegathering.connect(this,
                                         &BasicPortAllocator::OnIceRegathering);
   return session;
 }
-
+// 测试类可以先忽略
 void BasicPortAllocator::AddTurnServerForTesting(
     const RelayServerConfig& turn_server) {
   CheckRunOnValidThreadAndInitialized();
@@ -322,6 +328,7 @@ BasicPortAllocatorSession::BasicPortAllocatorSession(
       turn_port_prune_policy_(allocator->turn_port_prune_policy()) {
   TRACE_EVENT0("webrtc",
                "BasicPortAllocatorSession::BasicPortAllocatorSession");
+              //  网络管理器
   allocator_->network_manager()->SignalNetworksChanged.connect(
       this, &BasicPortAllocatorSession::OnNetworksChanged);
   allocator_->network_manager()->StartUpdating();
@@ -413,11 +420,12 @@ void BasicPortAllocatorSession::SetCandidateFilter(uint32_t filter) {
     }
   }
 }
-
+// 开始获取端口 
 void BasicPortAllocatorSession::StartGettingPorts() {
   RTC_DCHECK_RUN_ON(network_thread_);
   state_ = SessionState::GATHERING;
 
+// 提交到网络层
   network_thread_->PostTask(
       SafeTask(network_safety_.flag(), [this] { GetPortConfigurations(); }));
 
@@ -608,10 +616,11 @@ bool BasicPortAllocatorSession::CandidatesAllocationDone() const {
   RTC_DCHECK_RUN_ON(network_thread_);
   // Done only if all required AllocationSequence objects
   // are created.
+  // 分配序列器未创建 
   if (!allocation_sequences_created_) {
     return false;
   }
-
+  // 分配序列器正在运行
   // Check that all port allocation sequences are complete (not running).
   if (absl::c_any_of(sequences_, [](const AllocationSequence* sequence) {
         return sequence->state() == AllocationSequence::kRunning;
@@ -622,6 +631,7 @@ bool BasicPortAllocatorSession::CandidatesAllocationDone() const {
   // If all allocated ports are no longer gathering, session must have got all
   // expected candidates. Session will trigger candidates allocation complete
   // signal.
+  // 端口正在运行
   return absl::c_none_of(
       ports_, [](const PortData& port) { return port.inprogress(); });
 }
@@ -637,6 +647,7 @@ void BasicPortAllocatorSession::UpdateIceParametersInternal() {
 void BasicPortAllocatorSession::GetPortConfigurations() {
   RTC_DCHECK_RUN_ON(network_thread_);
 
+// 获取端口配置
   auto config = std::make_unique<PortConfiguration>(
       allocator_->stun_servers(), username(), password(),
       allocator()->field_trials());
@@ -651,10 +662,11 @@ void BasicPortAllocatorSession::ConfigReady(PortConfiguration* config) {
   RTC_DCHECK_RUN_ON(network_thread_);
   ConfigReady(absl::WrapUnique(config));
 }
-
+// 开始配置端口
 void BasicPortAllocatorSession::ConfigReady(
     std::unique_ptr<PortConfiguration> config) {
   RTC_DCHECK_RUN_ON(network_thread_);
+  // 网络线程开始配置
   network_thread_->PostTask(SafeTask(
       network_safety_.flag(), [this, config = std::move(config)]() mutable {
         OnConfigReady(std::move(config));
@@ -665,9 +677,11 @@ void BasicPortAllocatorSession::ConfigReady(
 void BasicPortAllocatorSession::OnConfigReady(
     std::unique_ptr<PortConfiguration> config) {
   RTC_DCHECK_RUN_ON(network_thread_);
+  // 添加到配置队列中
   if (config)
     configs_.push_back(std::move(config));
 
+// 分配端口
   AllocatePorts();
 }
 
@@ -701,7 +715,7 @@ void BasicPortAllocatorSession::OnConfigStop() {
     MaybeSignalCandidatesAllocationDone();
   }
 }
-
+// 分配端口
 void BasicPortAllocatorSession::AllocatePorts() {
   RTC_DCHECK_RUN_ON(network_thread_);
   network_thread_->PostTask(SafeTask(
@@ -709,7 +723,7 @@ void BasicPortAllocatorSession::AllocatePorts() {
         OnAllocate(allocation_epoch);
       }));
 }
-
+// 重新分配器 分配周期
 void BasicPortAllocatorSession::OnAllocate(int allocation_epoch) {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (allocation_epoch != allocation_epoch_)
@@ -717,6 +731,7 @@ void BasicPortAllocatorSession::OnAllocate(int allocation_epoch) {
 
   if (network_manager_started_ && !IsStopped()) {
     bool disable_equivalent_phases = true;
+    // 网络可用 然后开始分配
     DoAllocate(disable_equivalent_phases);
   }
 
@@ -852,7 +867,7 @@ std::vector<const rtc::Network*> BasicPortAllocatorSession::SelectIPv6Networks(
 
   return selected_networks;
 }
-
+//  分配端口
 // For each network, see if we have a sequence that covers it already.  If not,
 // create a new sequence to create the appropriate ports.
 void BasicPortAllocatorSession::DoAllocate(bool disable_equivalent) {
@@ -904,10 +919,11 @@ void BasicPortAllocatorSession::DoAllocate(bool disable_equivalent) {
           continue;
         }
       }
-
+      // 分配器序列任务
       AllocationSequence* sequence =
           new AllocationSequence(this, networks[i], config, sequence_flags,
                                  [this, safety_flag = network_safety_.flag()] {
+                                  // 端口分配完成
                                    if (safety_flag->alive())
                                      OnPortAllocationComplete();
                                  });
@@ -970,7 +986,7 @@ void BasicPortAllocatorSession::DisableEquivalentPhases(
     sequences_[i]->DisableEquivalentPhases(network, config, flags);
   }
 }
-
+// 根据端口设置基本的连接回调处理
 void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
                                                  AllocationSequence* seq) {
   RTC_DCHECK_RUN_ON(network_thread_);
@@ -978,29 +994,36 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
     return;
 
   RTC_LOG(LS_INFO) << "Adding allocated port for " << content_name();
+  // 为媒体流设置名称后，可以在后续的处理中方便地根据名称来区分和操作不同的媒体流
   port->set_content_name(content_name());
+  // 将候选地址的组件属性设置为1，表示该地址用于RTP数据传输。
   port->set_component(component());
+  // ICE候选地址的生成属性有两个值：0和1。0表示生成远程候选地址，1表示生成本地候选地址。
   port->set_generation(generation());
   if (allocator_->proxy().type != rtc::PROXY_NONE)
     port->set_proxy(allocator_->user_agent(), allocator_->proxy());
+    // 设置发送重传计数属性的方法
   port->set_send_retransmit_count_attribute(
       (flags() & PORTALLOCATOR_ENABLE_STUN_RETRANSMIT_ATTRIBUTE) != 0);
 
   PortData data(port, seq);
   ports_.push_back(data);
-
+// 端口连接状态回调
   port->SignalCandidateReady.connect(
       this, &BasicPortAllocatorSession::OnCandidateReady);
   port->SignalCandidateError.connect(
       this, &BasicPortAllocatorSession::OnCandidateError);
+      // 端口完成
   port->SignalPortComplete.connect(this,
                                    &BasicPortAllocatorSession::OnPortComplete);
+                                  //  端口销毁
   port->SubscribePortDestroyed(
       [this](PortInterface* port) { OnPortDestroyed(port); });
-
+// 端口连接错误
   port->SignalPortError.connect(this, &BasicPortAllocatorSession::OnPortError);
   RTC_LOG(LS_INFO) << port->ToString() << ": Added port to allocator";
 
+// 像stun发送请求并且接受公网的ip配置
   port->PrepareAddress();
 }
 
@@ -1010,7 +1033,7 @@ void BasicPortAllocatorSession::OnAllocationSequenceObjectsCreated() {
   // Send candidate allocation complete signal if we have no sequences.
   MaybeSignalCandidatesAllocationDone();
 }
-
+// 无论是UDP还是STUN 都是从这里开始准备网络的
 void BasicPortAllocatorSession::OnCandidateReady(Port* port,
                                                  const Candidate& c) {
   RTC_DCHECK_RUN_ON(network_thread_);
@@ -1058,6 +1081,7 @@ void BasicPortAllocatorSession::OnCandidateReady(Port* port,
   if (data->ready() && CheckCandidateFilter(c)) {
     std::vector<Candidate> candidates;
     candidates.push_back(allocator_->SanitizeCandidate(c));
+    // 网络节点完成 发送给数据通道
     SignalCandidatesReady(this, candidates);
   } else {
     RTC_LOG(LS_INFO) << "Discarding candidate because it doesn't match filter.";
@@ -1157,7 +1181,7 @@ void BasicPortAllocatorSession::PruneAllPorts() {
     data.Prune();
   }
 }
-
+// 端口完成回调
 void BasicPortAllocatorSession::OnPortComplete(Port* port) {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_LOG(LS_INFO) << port->ToString()
@@ -1169,7 +1193,7 @@ void BasicPortAllocatorSession::OnPortComplete(Port* port) {
   if (!data->inprogress()) {
     return;
   }
-
+  // 设置数据完成
   // Moving to COMPLETE state.
   data->set_state(PortData::STATE_COMPLETE);
   // Send candidate allocation complete signal if this was the last port.
@@ -1237,10 +1261,12 @@ void BasicPortAllocatorSession::MaybeSignalCandidatesAllocationDone() {
       RTC_LOG(LS_INFO) << "All candidates gathered for " << content_name()
                        << ":" << component() << ":" << generation();
     }
+    // 网络地址异常事件分发
     for (const auto& event : candidate_error_events_) {
       SignalCandidateError(this, event);
     }
     candidate_error_events_.clear();
+    // 网络分配完成
     SignalCandidatesAllocationDone(this);
   }
 }
@@ -1334,13 +1360,14 @@ AllocationSequence::AllocationSequence(
       phase_(0),
       port_allocation_complete_callback_(
           std::move(port_allocation_complete_callback)) {}
-
+// 初始化 udp
 void AllocationSequence::Init() {
   if (IsFlagSet(PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
     udp_socket_.reset(session_->socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(network_->GetBestIP(), 0),
         session_->allocator()->min_port(), session_->allocator()->max_port()));
     if (udp_socket_) {
+      //接受回调的包
       udp_socket_->SignalReadPacket.connect(this,
                                             &AllocationSequence::OnReadPacket);
     }
@@ -1433,7 +1460,7 @@ void AllocationSequence::DisableEquivalentPhases(const rtc::Network* network,
     }
   }
 }
-
+// 开始分配且
 void AllocationSequence::Start() {
   state_ = kRunning;
 
@@ -1441,6 +1468,7 @@ void AllocationSequence::Start() {
       SafeTask(safety_.flag(), [this, epoch = epoch_] { Process(epoch); }));
   // Take a snapshot of the best IP, so that when DisableEquivalentPhases is
   // called next time, we enable all phases if the best IP has since changed.
+  // 获取最好的网络IP
   previous_best_ip_ = network_->GetBestIP();
 }
 
@@ -1452,7 +1480,7 @@ void AllocationSequence::Stop() {
     ++epoch_;
   }
 }
-
+// 处理端口序列
 void AllocationSequence::Process(int epoch) {
   RTC_DCHECK(rtc::Thread::Current() == session_->network_thread());
   const char* const PHASE_NAMES[kNumPhases] = {"Udp", "Relay", "Tcp"};
@@ -1466,15 +1494,19 @@ void AllocationSequence::Process(int epoch) {
 
   switch (phase_) {
     case PHASE_UDP:
+    // 创建UDP端口
       CreateUDPPorts();
+      // 创建STUN端口
       CreateStunPorts();
       break;
 
     case PHASE_RELAY:
+    // 创建广播端口
       CreateRelayPorts();
       break;
 
     case PHASE_TCP:
+    // 创建TCP端口
       CreateTCPPorts();
       state_ = kCompleted;
       break;
@@ -1496,7 +1528,7 @@ void AllocationSequence::Process(int epoch) {
     port_allocation_complete_callback_();
   }
 }
-
+// 创建UDP端口
 void AllocationSequence::CreateUDPPorts() {
   if (IsFlagSet(PORTALLOCATOR_DISABLE_UDP)) {
     RTC_LOG(LS_VERBOSE) << "AllocationSequence: UDP ports disabled, skipping.";
@@ -1540,11 +1572,12 @@ void AllocationSequence::CreateUDPPorts() {
           RTC_LOG(LS_INFO)
               << "AllocationSequence: UDPPort will be handling the "
                  "STUN candidate generation.";
+                //  设置stun服务器
           port->set_server_addresses(config_->StunServers());
         }
       }
     }
-
+// 添加分配端口
     session_->AddAllocatedPort(port.release(), this);
   }
 }
@@ -1584,7 +1617,7 @@ void AllocationSequence::CreateStunPorts() {
         << "AllocationSequence: No STUN server configured, skipping.";
     return;
   }
-
+  // 创建stun
   std::unique_ptr<StunPort> port = StunPort::Create(
       session_->network_thread(), session_->socket_factory(), network_,
       session_->allocator()->min_port(), session_->allocator()->max_port(),
@@ -1592,6 +1625,7 @@ void AllocationSequence::CreateStunPorts() {
       session_->allocator()->stun_candidate_keepalive_interval(),
       session_->allocator()->field_trials());
   if (port) {
+    // 创建完成以后添加
     port->SetIceTiebreaker(session_->ice_tiebreaker());
     session_->AddAllocatedPort(port.release(), this);
     // Since StunPort is not created using shared socket, `port` will not be
@@ -1753,7 +1787,7 @@ void AllocationSequence::OnPortDestroyed(PortInterface* port) {
     RTC_DCHECK_NOTREACHED();
   }
 }
-
+// 端口配置
 PortConfiguration::PortConfiguration(
     const ServerAddresses& stun_servers,
     absl::string_view username,
@@ -1761,6 +1795,7 @@ PortConfiguration::PortConfiguration(
     const webrtc::FieldTrialsView* field_trials)
     : stun_servers(stun_servers), username(username), password(password) {
   if (!stun_servers.empty())
+  // 获取第一个stun地址
     stun_address = *(stun_servers.begin());
   // Note that this won't change once the config is initialized.
   if (field_trials) {
